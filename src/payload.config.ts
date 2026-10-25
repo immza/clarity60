@@ -18,10 +18,12 @@ import { Categories } from './collections/Categories'
 import { Corrections } from './collections/Corrections'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
+import { Sections } from './collections/Sections'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
 import { SiteSettings } from './globals/SiteSettings'
 import { auditAfterChange, auditAfterDelete } from './hooks/auditLog'
+import { refreshArticlePaths } from './jobs/refreshArticlePaths'
 import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
@@ -53,7 +55,7 @@ export default buildConfig({
     // Kept out of the public repo's defaults; set PAYLOAD_ADMIN_ROUTE in production.
     admin: (process.env.PAYLOAD_ADMIN_ROUTE as `/${string}` | undefined) || '/admin',
   },
-  collections: [Articles, Categories, Tags, Authors, Media, Pages, Corrections, AdSlots, Users, AuditLog].map(
+  collections: [Articles, Sections, Categories, Tags, Authors, Media, Pages, Corrections, AdSlots, Users, AuditLog].map(
     withAudit,
   ),
   globals: [SiteSettings],
@@ -71,6 +73,7 @@ export default buildConfig({
   cors: [siteUrl],
   csrf: [siteUrl],
   jobs: {
+    tasks: [refreshArticlePaths],
     access: {
       // Only editors and above may queue jobs (this covers scheduled publishing).
       queue: async (args) => (await totpAccess(editorsOnly)(args)) === true,

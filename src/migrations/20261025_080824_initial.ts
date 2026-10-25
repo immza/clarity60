@@ -2,13 +2,11 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
-   CREATE TYPE "public"."enum_articles_section" AS ENUM('news', 'explainers');
-  CREATE TYPE "public"."enum_articles_editorial_status" AS ENUM('draft', 'in_review');
+   CREATE TYPE "public"."enum_articles_editorial_status" AS ENUM('draft', 'in_review');
   CREATE TYPE "public"."enum_articles_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum__articles_v_version_section" AS ENUM('news', 'explainers');
   CREATE TYPE "public"."enum__articles_v_version_editorial_status" AS ENUM('draft', 'in_review');
   CREATE TYPE "public"."enum__articles_v_version_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum_categories_section" AS ENUM('news', 'explainers');
+  CREATE TYPE "public"."enum_sections_kind" AS ENUM('news', 'evergreen');
   CREATE TYPE "public"."enum_media_license" AS ENUM('own', 'canva', 'public-domain', 'creative-commons', 'ai-generated', 'licensed');
   CREATE TYPE "public"."enum_pages_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__pages_v_version_status" AS ENUM('draft', 'published');
@@ -18,9 +16,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_audit_log_action" AS ENUM('create', 'update', 'publish', 'delete');
   CREATE TYPE "public"."enum_redirects_to_type" AS ENUM('reference', 'custom');
   CREATE TYPE "public"."enum_redirects_type" AS ENUM('301', '302');
-  CREATE TYPE "public"."enum_payload_jobs_log_task_slug" AS ENUM('inline', 'schedulePublish');
+  CREATE TYPE "public"."enum_payload_jobs_log_task_slug" AS ENUM('inline', 'refreshArticlePaths', 'schedulePublish');
   CREATE TYPE "public"."enum_payload_jobs_log_state" AS ENUM('failed', 'succeeded');
-  CREATE TYPE "public"."enum_payload_jobs_task_slug" AS ENUM('inline', 'schedulePublish');
+  CREATE TYPE "public"."enum_payload_jobs_task_slug" AS ENUM('inline', 'refreshArticlePaths', 'schedulePublish');
   CREATE TABLE "articles_sources" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
@@ -46,7 +44,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"developing_is_developing" boolean,
   	"instagram_url" varchar,
   	"related_explainer_id" integer,
-  	"section" "enum_articles_section",
+  	"section_id" integer,
   	"category_id" integer,
   	"slug" varchar,
   	"byline_override" varchar,
@@ -55,6 +53,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"featured" boolean,
   	"top_story" boolean,
   	"path" varchar,
+  	"published_path" varchar,
   	"word_count" numeric,
   	"column_inches" numeric,
   	"reading_minutes" numeric,
@@ -104,7 +103,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_developing_is_developing" boolean,
   	"version_instagram_url" varchar,
   	"version_related_explainer_id" integer,
-  	"version_section" "enum__articles_v_version_section",
+  	"version_section_id" integer,
   	"version_category_id" integer,
   	"version_slug" varchar,
   	"version_byline_override" varchar,
@@ -113,6 +112,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_featured" boolean,
   	"version_top_story" boolean,
   	"version_path" varchar,
+  	"version_published_path" varchar,
   	"version_word_count" numeric,
   	"version_column_inches" numeric,
   	"version_reading_minutes" numeric,
@@ -138,16 +138,45 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"authors_id" integer
   );
   
+  CREATE TABLE "sections" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"name" varchar NOT NULL,
+  	"slug" varchar NOT NULL,
+  	"kind" "enum_sections_kind" DEFAULT 'evergreen' NOT NULL,
+  	"kicker" varchar,
+  	"description" varchar,
+  	"show_in_nav" boolean DEFAULT true,
+  	"sort_order" numeric DEFAULT 0,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "sections_texts" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"order" integer NOT NULL,
+  	"parent_id" integer NOT NULL,
+  	"path" varchar NOT NULL,
+  	"text" varchar
+  );
+  
   CREATE TABLE "categories" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"name" varchar NOT NULL,
   	"slug" varchar NOT NULL,
-  	"section" "enum_categories_section" NOT NULL,
+  	"section_id" integer NOT NULL,
   	"parent_id" integer,
   	"description" varchar,
   	"sort_order" numeric DEFAULT 0,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "categories_texts" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"order" integer NOT NULL,
+  	"parent_id" integer NOT NULL,
+  	"path" varchar NOT NULL,
+  	"text" varchar
   );
   
   CREATE TABLE "tags" (
@@ -367,6 +396,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"parent_id" integer NOT NULL,
   	"path" varchar NOT NULL,
   	"articles_id" integer,
+  	"sections_id" integer,
   	"categories_id" integer,
   	"tags_id" integer,
   	"authors_id" integer,
@@ -403,6 +433,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
   
+  CREATE TABLE "site_settings_nav_extras" (
+  	"_order" integer NOT NULL,
+  	"_parent_id" integer NOT NULL,
+  	"id" varchar PRIMARY KEY NOT NULL,
+  	"label" varchar NOT NULL,
+  	"url" varchar NOT NULL
+  );
+  
   CREATE TABLE "site_settings" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"tagline" varchar DEFAULT 'The world, explained.' NOT NULL,
@@ -419,6 +457,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "articles_developing_updates" ADD CONSTRAINT "articles_developing_updates_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."articles"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "articles" ADD CONSTRAINT "articles_hero_media_id_media_id_fk" FOREIGN KEY ("hero_media_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "articles" ADD CONSTRAINT "articles_related_explainer_id_articles_id_fk" FOREIGN KEY ("related_explainer_id") REFERENCES "public"."articles"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "articles" ADD CONSTRAINT "articles_section_id_sections_id_fk" FOREIGN KEY ("section_id") REFERENCES "public"."sections"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "articles" ADD CONSTRAINT "articles_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "articles" ADD CONSTRAINT "articles_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "articles" ADD CONSTRAINT "articles_meta_image_id_media_id_fk" FOREIGN KEY ("meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
@@ -430,13 +469,17 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_articles_v" ADD CONSTRAINT "_articles_v_parent_id_articles_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."articles"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_articles_v" ADD CONSTRAINT "_articles_v_version_hero_media_id_media_id_fk" FOREIGN KEY ("version_hero_media_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_articles_v" ADD CONSTRAINT "_articles_v_version_related_explainer_id_articles_id_fk" FOREIGN KEY ("version_related_explainer_id") REFERENCES "public"."articles"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_articles_v" ADD CONSTRAINT "_articles_v_version_section_id_sections_id_fk" FOREIGN KEY ("version_section_id") REFERENCES "public"."sections"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_articles_v" ADD CONSTRAINT "_articles_v_version_category_id_categories_id_fk" FOREIGN KEY ("version_category_id") REFERENCES "public"."categories"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_articles_v" ADD CONSTRAINT "_articles_v_version_created_by_id_users_id_fk" FOREIGN KEY ("version_created_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_articles_v" ADD CONSTRAINT "_articles_v_version_meta_image_id_media_id_fk" FOREIGN KEY ("version_meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_articles_v_rels" ADD CONSTRAINT "_articles_v_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."_articles_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_articles_v_rels" ADD CONSTRAINT "_articles_v_rels_tags_fk" FOREIGN KEY ("tags_id") REFERENCES "public"."tags"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_articles_v_rels" ADD CONSTRAINT "_articles_v_rels_authors_fk" FOREIGN KEY ("authors_id") REFERENCES "public"."authors"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "sections_texts" ADD CONSTRAINT "sections_texts_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."sections"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "categories" ADD CONSTRAINT "categories_section_id_sections_id_fk" FOREIGN KEY ("section_id") REFERENCES "public"."sections"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "categories" ADD CONSTRAINT "categories_parent_id_categories_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."categories"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "categories_texts" ADD CONSTRAINT "categories_texts_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "authors_socials" ADD CONSTRAINT "authors_socials_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."authors"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "authors" ADD CONSTRAINT "authors_photo_id_media_id_fk" FOREIGN KEY ("photo_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "pages" ADD CONSTRAINT "pages_meta_image_id_media_id_fk" FOREIGN KEY ("meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
@@ -453,6 +496,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_jobs_log" ADD CONSTRAINT "payload_jobs_log_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."payload_jobs"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_locked_documents"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_articles_fk" FOREIGN KEY ("articles_id") REFERENCES "public"."articles"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_sections_fk" FOREIGN KEY ("sections_id") REFERENCES "public"."sections"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_categories_fk" FOREIGN KEY ("categories_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_tags_fk" FOREIGN KEY ("tags_id") REFERENCES "public"."tags"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_authors_fk" FOREIGN KEY ("authors_id") REFERENCES "public"."authors"("id") ON DELETE cascade ON UPDATE no action;
@@ -465,12 +509,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_redirects_fk" FOREIGN KEY ("redirects_id") REFERENCES "public"."redirects"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_preferences"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "site_settings_nav_extras" ADD CONSTRAINT "site_settings_nav_extras_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."site_settings"("id") ON DELETE cascade ON UPDATE no action;
   CREATE INDEX "articles_sources_order_idx" ON "articles_sources" USING btree ("_order");
   CREATE INDEX "articles_sources_parent_id_idx" ON "articles_sources" USING btree ("_parent_id");
   CREATE INDEX "articles_developing_updates_order_idx" ON "articles_developing_updates" USING btree ("_order");
   CREATE INDEX "articles_developing_updates_parent_id_idx" ON "articles_developing_updates" USING btree ("_parent_id");
   CREATE INDEX "articles_hero_media_idx" ON "articles" USING btree ("hero_media_id");
   CREATE INDEX "articles_related_explainer_idx" ON "articles" USING btree ("related_explainer_id");
+  CREATE INDEX "articles_section_idx" ON "articles" USING btree ("section_id");
   CREATE INDEX "articles_category_idx" ON "articles" USING btree ("category_id");
   CREATE INDEX "articles_slug_idx" ON "articles" USING btree ("slug");
   CREATE INDEX "articles_published_at_idx" ON "articles" USING btree ("published_at");
@@ -492,6 +538,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_articles_v_parent_idx" ON "_articles_v" USING btree ("parent_id");
   CREATE INDEX "_articles_v_version_version_hero_media_idx" ON "_articles_v" USING btree ("version_hero_media_id");
   CREATE INDEX "_articles_v_version_version_related_explainer_idx" ON "_articles_v" USING btree ("version_related_explainer_id");
+  CREATE INDEX "_articles_v_version_version_section_idx" ON "_articles_v" USING btree ("version_section_id");
   CREATE INDEX "_articles_v_version_version_category_idx" ON "_articles_v" USING btree ("version_category_id");
   CREATE INDEX "_articles_v_version_version_slug_idx" ON "_articles_v" USING btree ("version_slug");
   CREATE INDEX "_articles_v_version_version_published_at_idx" ON "_articles_v" USING btree ("version_published_at");
@@ -510,10 +557,16 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "_articles_v_rels_path_idx" ON "_articles_v_rels" USING btree ("path");
   CREATE INDEX "_articles_v_rels_tags_id_idx" ON "_articles_v_rels" USING btree ("tags_id");
   CREATE INDEX "_articles_v_rels_authors_id_idx" ON "_articles_v_rels" USING btree ("authors_id");
+  CREATE UNIQUE INDEX "sections_slug_idx" ON "sections" USING btree ("slug");
+  CREATE INDEX "sections_updated_at_idx" ON "sections" USING btree ("updated_at");
+  CREATE INDEX "sections_created_at_idx" ON "sections" USING btree ("created_at");
+  CREATE INDEX "sections_texts_order_parent" ON "sections_texts" USING btree ("order","parent_id");
   CREATE INDEX "categories_slug_idx" ON "categories" USING btree ("slug");
+  CREATE INDEX "categories_section_idx" ON "categories" USING btree ("section_id");
   CREATE INDEX "categories_parent_idx" ON "categories" USING btree ("parent_id");
   CREATE INDEX "categories_updated_at_idx" ON "categories" USING btree ("updated_at");
   CREATE INDEX "categories_created_at_idx" ON "categories" USING btree ("created_at");
+  CREATE INDEX "categories_texts_order_parent" ON "categories_texts" USING btree ("order","parent_id");
   CREATE UNIQUE INDEX "tags_slug_idx" ON "tags" USING btree ("slug");
   CREATE INDEX "tags_updated_at_idx" ON "tags" USING btree ("updated_at");
   CREATE INDEX "tags_created_at_idx" ON "tags" USING btree ("created_at");
@@ -586,6 +639,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_parent_idx" ON "payload_locked_documents_rels" USING btree ("parent_id");
   CREATE INDEX "payload_locked_documents_rels_path_idx" ON "payload_locked_documents_rels" USING btree ("path");
   CREATE INDEX "payload_locked_documents_rels_articles_id_idx" ON "payload_locked_documents_rels" USING btree ("articles_id");
+  CREATE INDEX "payload_locked_documents_rels_sections_id_idx" ON "payload_locked_documents_rels" USING btree ("sections_id");
   CREATE INDEX "payload_locked_documents_rels_categories_id_idx" ON "payload_locked_documents_rels" USING btree ("categories_id");
   CREATE INDEX "payload_locked_documents_rels_tags_id_idx" ON "payload_locked_documents_rels" USING btree ("tags_id");
   CREATE INDEX "payload_locked_documents_rels_authors_id_idx" ON "payload_locked_documents_rels" USING btree ("authors_id");
@@ -604,7 +658,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_preferences_rels_path_idx" ON "payload_preferences_rels" USING btree ("path");
   CREATE INDEX "payload_preferences_rels_users_id_idx" ON "payload_preferences_rels" USING btree ("users_id");
   CREATE INDEX "payload_migrations_updated_at_idx" ON "payload_migrations" USING btree ("updated_at");
-  CREATE INDEX "payload_migrations_created_at_idx" ON "payload_migrations" USING btree ("created_at");`)
+  CREATE INDEX "payload_migrations_created_at_idx" ON "payload_migrations" USING btree ("created_at");
+  CREATE INDEX "site_settings_nav_extras_order_idx" ON "site_settings_nav_extras" USING btree ("_order");
+  CREATE INDEX "site_settings_nav_extras_parent_id_idx" ON "site_settings_nav_extras" USING btree ("_parent_id");`)
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
@@ -617,7 +673,10 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "_articles_v_version_developing_updates" CASCADE;
   DROP TABLE "_articles_v" CASCADE;
   DROP TABLE "_articles_v_rels" CASCADE;
+  DROP TABLE "sections" CASCADE;
+  DROP TABLE "sections_texts" CASCADE;
   DROP TABLE "categories" CASCADE;
+  DROP TABLE "categories_texts" CASCADE;
   DROP TABLE "tags" CASCADE;
   DROP TABLE "authors_socials" CASCADE;
   DROP TABLE "authors" CASCADE;
@@ -640,14 +699,13 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "payload_preferences" CASCADE;
   DROP TABLE "payload_preferences_rels" CASCADE;
   DROP TABLE "payload_migrations" CASCADE;
+  DROP TABLE "site_settings_nav_extras" CASCADE;
   DROP TABLE "site_settings" CASCADE;
-  DROP TYPE "public"."enum_articles_section";
   DROP TYPE "public"."enum_articles_editorial_status";
   DROP TYPE "public"."enum_articles_status";
-  DROP TYPE "public"."enum__articles_v_version_section";
   DROP TYPE "public"."enum__articles_v_version_editorial_status";
   DROP TYPE "public"."enum__articles_v_version_status";
-  DROP TYPE "public"."enum_categories_section";
+  DROP TYPE "public"."enum_sections_kind";
   DROP TYPE "public"."enum_media_license";
   DROP TYPE "public"."enum_pages_status";
   DROP TYPE "public"."enum__pages_v_version_status";

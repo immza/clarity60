@@ -3,15 +3,14 @@ import { ValidationError } from 'payload'
 
 import { anyone, editorsOnly, superAdminOnly } from '@/access/roles'
 import { slugField } from '@/fields/slug'
-
-export const SECTIONS = [
-  { label: 'World News', value: 'news' },
-  { label: 'Explainers', value: 'explainers' },
-] as const
+import { queuePathRefresh } from '@/hooks/queuePathRefresh'
+import { trackPreviousSlug } from '@/lib/articlePath'
+import { idOf } from '@/lib/relations'
 
 /**
- * News regions and explainer subjects. Max two levels (e.g. History → Ancient History).
- * Slugs are unique among siblings, since they appear in URLs: /news/asia/...
+ * Categories inside a section (news regions, explainer subjects...). Max two levels
+ * (e.g. History → Ancient History). Slugs are unique among siblings, since they appear
+ * in URLs: /news/asia/...
  */
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -20,10 +19,12 @@ export const Categories: CollectionConfig = {
   custom: { totp: { disableAccessWrapper: { read: true } } },
   defaultSort: 'sortOrder',
   hooks: {
+    beforeChange: [({ data, originalDoc }) => trackPreviousSlug({ data, originalDoc })],
+    afterChange: [queuePathRefresh('category')],
     beforeValidate: [
       async ({ data, originalDoc, req }) => {
         if (!data) return data
-        const section = data.section ?? originalDoc?.section
+        const section = idOf(data.section ?? originalDoc?.section)
         const parentId = data.parent === undefined ? originalDoc?.parent : data.parent
         const id = originalDoc?.id
 
@@ -52,7 +53,7 @@ export const Categories: CollectionConfig = {
               errors: [{ path: 'parent', message: 'Categories can only be two levels deep.' }],
             })
           }
-          if (parent.section !== section) {
+          if (idOf(parent.section) !== section) {
             throw new ValidationError({
               errors: [{ path: 'parent', message: 'Parent must be in the same section.' }],
             })
@@ -92,9 +93,10 @@ export const Categories: CollectionConfig = {
     slugField('name'),
     {
       name: 'section',
-      type: 'select',
+      type: 'relationship',
+      relationTo: 'sections',
       required: true,
-      options: [...SECTIONS],
+      index: true,
       admin: { position: 'sidebar' },
     },
     {
@@ -104,7 +106,7 @@ export const Categories: CollectionConfig = {
       admin: { position: 'sidebar', description: 'Leave empty for a top-level category.' },
       filterOptions: ({ data, id }) => {
         const and: Where[] = [{ parent: { exists: false } }]
-        if (data?.section) and.push({ section: { equals: data.section } })
+        if (data?.section) and.push({ section: { equals: idOf(data.section) } })
         if (id) and.push({ id: { not_equals: id } })
         return { and }
       },
@@ -114,6 +116,12 @@ export const Categories: CollectionConfig = {
       type: 'textarea',
       maxLength: 300,
       admin: { description: 'One line shown on the section page, e.g. "Borders, maps and strange places."' },
+    },
+    {
+      name: 'previousSlugs',
+      type: 'text',
+      hasMany: true,
+      admin: { readOnly: true, position: 'sidebar', description: 'Old URL names; links using them redirect here.' },
     },
     { name: 'sortOrder', type: 'number', defaultValue: 0, admin: { position: 'sidebar' } },
   ],

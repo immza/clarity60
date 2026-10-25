@@ -1,5 +1,5 @@
 /**
- * Idempotent seed: regions, explainer subjects, the house author and ad slots.
+ * Idempotent seed: the two launch sections, regions, explainer subjects, the house author and ad slots.
  * Run with `npm run seed`. Safe to re-run; existing rows are left alone.
  */
 import { getPayload } from 'payload'
@@ -38,7 +38,7 @@ const AD_SLOTS = [
 const payload = await getPayload({ config })
 
 const ensure = async <T extends Record<string, unknown>>(
-  collection: 'categories' | 'authors' | 'ad-slots',
+  collection: 'sections' | 'categories' | 'authors' | 'ad-slots',
   where: Record<string, { equals: unknown }>,
   data: T,
 ) => {
@@ -48,20 +48,37 @@ const ensure = async <T extends Record<string, unknown>>(
   return payload.create({ collection, data: data as never })
 }
 
+const news = await ensure('sections', { slug: { equals: 'news' } }, {
+  name: 'World News',
+  slug: 'news',
+  kind: 'news',
+  kicker: 'Section · The News Desk',
+  description: 'What happened today, where, and why it matters, in plain English.',
+  sortOrder: 0,
+})
+const explainers = await ensure('sections', { slug: { equals: 'explainers' } }, {
+  name: 'Explainers',
+  slug: 'explainers',
+  kind: 'evergreen',
+  kicker: 'Section · The Knowledge Desk',
+  description: "Everything we've ever explained, sorted by subject. Pick a desk.",
+  sortOrder: 1,
+})
+
 for (const [i, [name, slug]] of NEWS_REGIONS.entries()) {
-  await ensure('categories', { section: { equals: 'news' }, slug: { equals: slug } }, {
+  await ensure('categories', { section: { equals: news.id }, slug: { equals: slug } }, {
     name,
     slug,
-    section: 'news',
+    section: news.id,
     sortOrder: i,
   })
 }
 
 for (const [i, [name, slug, description]] of EXPLAINER_SUBJECTS.entries()) {
-  await ensure('categories', { section: { equals: 'explainers' }, slug: { equals: slug } }, {
+  await ensure('categories', { section: { equals: explainers.id }, slug: { equals: slug } }, {
     name,
     slug,
-    section: 'explainers',
+    section: explainers.id,
     description,
     sortOrder: i,
   })

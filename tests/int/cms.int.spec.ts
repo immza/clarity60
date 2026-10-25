@@ -2,13 +2,15 @@ import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
-import type { Article, Category, User } from '@/payload-types'
+import type { Article, Category, Section, User } from '@/payload-types'
 
 let payload: Payload
 let superAdmin: User
 let editor: User
 let writer: User
 let otherWriter: User
+let newsSection: Section
+let explainersSection: Section
 let asia: Category
 let europe: Category
 let history: Category
@@ -43,7 +45,7 @@ const draftArticle = (user: User, overrides: Partial<Article> = {}) =>
     data: {
       title: `Test story ${++counter}`,
       summary: 'A summary.',
-      section: 'news',
+      section: newsSection.id,
       category: asia.id,
       body: body('one two three four five'),
       _status: 'draft',
@@ -66,11 +68,21 @@ beforeAll(async () => {
   writer = await makeUser('writer@test.dev', 'writer')
   otherWriter = await makeUser('writer2@test.dev', 'writer')
 
-  const cat = (name: string, slug: string, section: 'news' | 'explainers') =>
-    payload.create({ collection: 'categories', data: { name, slug, section }, overrideAccess: true })
-  asia = await cat('Asia', 'asia', 'news')
-  europe = await cat('Europe', 'europe', 'news')
-  history = await cat('History', 'history', 'explainers')
+  newsSection = await payload.create({
+    collection: 'sections',
+    data: { name: 'World News', slug: 'news', kind: 'news' },
+    overrideAccess: true,
+  })
+  explainersSection = await payload.create({
+    collection: 'sections',
+    data: { name: 'Explainers', slug: 'explainers', kind: 'evergreen' },
+    overrideAccess: true,
+  })
+  const cat = (name: string, slug: string, section: Section) =>
+    payload.create({ collection: 'categories', data: { name, slug, section: section.id }, overrideAccess: true })
+  asia = await cat('Asia', 'asia', newsSection)
+  europe = await cat('Europe', 'europe', newsSection)
+  history = await cat('History', 'history', explainersSection)
 })
 
 describe('roles', () => {
@@ -94,7 +106,7 @@ describe('roles', () => {
           title: 'Sneaky publish',
           slug: '',
           summary: 'A summary.',
-          section: 'news',
+          section: newsSection.id,
           category: asia.id,
           body: body('text'),
           _status: 'published',
@@ -199,12 +211,12 @@ describe('urls', () => {
   it('rejects a duplicate slug in the same section but allows it in another', async () => {
     await draftArticle(editor, { title: 'Same Title' })
     await expect(draftArticle(editor, { title: 'Same Title' })).rejects.toThrow()
-    const explainer = await draftArticle(editor, { title: 'Same Title', section: 'explainers', category: history.id })
+    const explainer = await draftArticle(editor, { title: 'Same Title', section: explainersSection.id, category: history.id })
     expect(explainer.path).toBe('/explainers/history/same-title')
   })
 
   it('rejects a category from the wrong section', async () => {
-    await expect(draftArticle(editor, { section: 'explainers', category: asia.id })).rejects.toThrow()
+    await expect(draftArticle(editor, { section: explainersSection.id, category: asia.id })).rejects.toThrow()
   })
 
   it('moving a published article creates a 301 from the old URL and avoids loops when moved back', async () => {
@@ -269,17 +281,17 @@ describe('categories', () => {
   it('a category with sub-categories cannot itself be nested', async () => {
     const geography = await payload.create({
       collection: 'categories',
-      data: { name: 'Geo Parent', slug: '', section: 'explainers' },
+      data: { name: 'Geo Parent', slug: '', section: explainersSection.id },
       overrideAccess: true,
     })
     const parentWithChild = await payload.create({
       collection: 'categories',
-      data: { name: 'Has Child', slug: '', section: 'explainers' },
+      data: { name: 'Has Child', slug: '', section: explainersSection.id },
       overrideAccess: true,
     })
     await payload.create({
       collection: 'categories',
-      data: { name: 'The Child', slug: '', section: 'explainers', parent: parentWithChild.id },
+      data: { name: 'The Child', slug: '', section: explainersSection.id, parent: parentWithChild.id },
       overrideAccess: true,
     })
     await expect(
@@ -295,7 +307,7 @@ describe('categories', () => {
   it('allows two levels but not three', async () => {
     const ancient = await payload.create({
       collection: 'categories',
-      data: { name: 'Ancient History', slug: '', section: 'explainers', parent: history.id },
+      data: { name: 'Ancient History', slug: '', section: explainersSection.id, parent: history.id },
       ...asUser(editor),
     })
     expect(ancient.slug).toBe('ancient-history')
@@ -303,7 +315,7 @@ describe('categories', () => {
     await expect(
       payload.create({
         collection: 'categories',
-        data: { name: 'Rome', slug: '', section: 'explainers', parent: ancient.id },
+        data: { name: 'Rome', slug: '', section: explainersSection.id, parent: ancient.id },
         ...asUser(editor),
       }),
     ).rejects.toThrow()
@@ -312,11 +324,57 @@ describe('categories', () => {
   it('builds article paths through the parent category', async () => {
     const sub = await payload.create({
       collection: 'categories',
-      data: { name: 'Cold War', slug: '', section: 'explainers', parent: history.id },
+      data: { name: 'Cold War', slug: '', section: explainersSection.id, parent: history.id },
       overrideAccess: true,
     })
-    const doc = await draftArticle(editor, { title: 'The Berlin Airlift', section: 'explainers', category: sub.id })
+    const doc = await draftArticle(editor, { title: 'The Berlin Airlift', section: explainersSection.id, category: sub.id })
     expect(doc.path).toBe('/explainers/history/cold-war/the-berlin-airlift')
+  })
+})
+
+describe('flexible structure', () => {
+  it('a new section can be added from the admin and gets its own URLs', async () => {
+    const business = await payload.create({
+      collection: 'sections',
+      data: { name: 'Business', slug: '', kind: 'news' },
+      overrideAccess: true,
+    })
+    const markets = await payload.create({
+      collection: 'categories',
+      data: { name: 'Markets', slug: '', section: business.id },
+      overrideAccess: true,
+    })
+    const doc = await draftArticle(editor, { title: 'Why Oil Prices Moved', section: business.id, category: markets.id })
+    expect(doc.path).toBe('/business/markets/why-oil-prices-moved')
+  })
+
+  it('reserved URLs cannot be used as a section', async () => {
+    await expect(
+      payload.create({ collection: 'sections', data: { name: 'Admin', slug: 'admin', kind: 'news' }, overrideAccess: true }),
+    ).rejects.toThrow()
+  })
+
+  it('renaming a category remembers the old slug and refreshes article URLs in the background', async () => {
+    const oceania = await payload.create({
+      collection: 'categories',
+      data: { name: 'Oceania', slug: 'oceania', section: newsSection.id },
+      overrideAccess: true,
+    })
+    const doc = await draftArticle(editor, { title: 'Reef Report', category: oceania.id })
+    await payload.update({ collection: 'articles', id: doc.id, data: { _status: 'published' }, ...asUser(editor) })
+
+    const renamed = await payload.update({
+      collection: 'categories',
+      id: oceania.id,
+      data: { slug: 'pacific' },
+      ...asUser(editor),
+    })
+    expect(renamed.previousSlugs).toContain('oceania')
+
+    await payload.jobs.run({ limit: 10 })
+    const after = await payload.findByID({ collection: 'articles', id: doc.id })
+    expect(after.path).toBe('/news/pacific/reef-report')
+    expect(after._status).toBe('published')
   })
 })
 

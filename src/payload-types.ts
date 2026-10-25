@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     articles: Article;
+    sections: Section;
     categories: Category;
     tags: Tag;
     authors: Author;
@@ -88,6 +89,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     articles: ArticlesSelect<false> | ArticlesSelect<true>;
+    sections: SectionsSelect<false> | SectionsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
@@ -122,6 +124,7 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
+      refreshArticlePaths: TaskRefreshArticlePaths;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -204,12 +207,15 @@ export interface Article {
    */
   instagramUrl?: string | null;
   /**
-   * "Need the backstory?" link.
+   * "Need the backstory?" link to an explainer.
    */
   relatedExplainer?: (number | null) | Article;
-  section: 'news' | 'explainers';
   /**
-   * Region (news) or subject (explainers). Sets the URL.
+   * The desk, e.g. World News or Explainers.
+   */
+  section: number | Section;
+  /**
+   * Region, subject or sub-category within the section. Sets the URL.
    */
   category: number | Category;
   /**
@@ -235,7 +241,7 @@ export interface Article {
    */
   featured?: boolean | null;
   /**
-   * Top story on World News.
+   * Top story on its section page.
    */
   topStory?: boolean | null;
   path?: string | null;
@@ -305,6 +311,40 @@ export interface Media {
   };
 }
 /**
+ * Top-level desks. Each becomes a page at /{slug} with its own categories.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sections".
+ */
+export interface Section {
+  id: number;
+  /**
+   * e.g. "World News"
+   */
+  name: string;
+  /**
+   * The URL, e.g. "news" → clarity60.com/news. Avoid changing it once articles are live.
+   */
+  slug: string;
+  kind: 'news' | 'evergreen';
+  /**
+   * Small label above the title, e.g. "Section · The News Desk"
+   */
+  kicker?: string | null;
+  /**
+   * e.g. "What happened today, where, and why it matters, in plain English."
+   */
+  description?: string | null;
+  /**
+   * Old URL names; links using them redirect here.
+   */
+  previousSlugs?: string[] | null;
+  showInNav?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
@@ -315,7 +355,7 @@ export interface Category {
    * Used in the URL. Leave blank to generate from the title. Changing it later creates a redirect.
    */
   slug: string;
-  section: 'news' | 'explainers';
+  section: number | Section;
   /**
    * Leave empty for a top-level category.
    */
@@ -324,6 +364,10 @@ export interface Category {
    * One line shown on the section page, e.g. "Borders, maps and strange places."
    */
   description?: string | null;
+  /**
+   * Old URL names; links using them redirect here.
+   */
+  previousSlugs?: string[] | null;
   sortOrder?: number | null;
   updatedAt: string;
   createdAt: string;
@@ -392,7 +436,6 @@ export interface User {
    */
   author?: (number | null) | Author;
   totpSecret?: string | null;
-  hasTotp?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -605,7 +648,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'schedulePublish';
+        taskSlug: 'inline' | 'refreshArticlePaths' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -638,7 +681,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'schedulePublish') | null;
+  taskSlug?: ('inline' | 'refreshArticlePaths' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -655,6 +698,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'articles';
         value: number | Article;
+      } | null)
+    | ({
+        relationTo: 'sections';
+        value: number | Section;
       } | null)
     | ({
         relationTo: 'categories';
@@ -797,6 +844,22 @@ export interface ArticlesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sections_select".
+ */
+export interface SectionsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  kind?: T;
+  kicker?: T;
+  description?: T;
+  previousSlugs?: T;
+  showInNav?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
@@ -805,6 +868,7 @@ export interface CategoriesSelect<T extends boolean = true> {
   section?: T;
   parent?: T;
   description?: T;
+  previousSlugs?: T;
   sortOrder?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -931,7 +995,6 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   author?: T;
   totpSecret?: T;
-  hasTotp?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -1071,6 +1134,16 @@ export interface SiteSetting {
    * Show an in-feed ad after every N stories.
    */
   inFeedAdEvery: number;
+  /**
+   * Sections marked "Show in nav" appear automatically. Add anything else here (e.g. Puzzles, The Newsreel).
+   */
+  navExtras?:
+    | {
+        label: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   socials?: {
     instagram?: string | null;
     youtube?: string | null;
@@ -1087,6 +1160,13 @@ export interface SiteSetting {
 export interface SiteSettingsSelect<T extends boolean = true> {
   tagline?: T;
   inFeedAdEvery?: T;
+  navExtras?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        id?: T;
+      };
   socials?:
     | T
     | {
@@ -1108,6 +1188,19 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskRefreshArticlePaths".
+ */
+export interface TaskRefreshArticlePaths {
+  input: {
+    sectionId?: number | null;
+    categoryId?: number | null;
+  };
+  output: {
+    updated?: number | null;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

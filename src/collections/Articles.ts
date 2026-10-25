@@ -3,28 +3,9 @@ import { Forbidden, ValidationError } from 'payload'
 
 import { editorsOnly, isEditorOrAbove, isStaff, publishedOrStaff, roleOf, staffOnly } from '@/access/roles'
 import { slugField } from '@/fields/slug'
+import { buildArticlePath } from '@/lib/articlePath'
+import { idOf } from '@/lib/relations'
 import { columnInchesFor, countWords, readingMinutesFor } from '@/lib/text'
-import { SECTIONS } from './Categories'
-
-const isNews = (data: Partial<{ section: string }> | undefined) => data?.section === 'news'
-
-const idOf = (value: unknown): number | string | undefined =>
-  value && typeof value === 'object' && 'id' in value ? (value as { id: number | string }).id : (value as number | string | undefined)
-
-/** Builds /{section}/{category}[/{subcategory}]/{slug}. */
-const buildPath = async (
-  req: Parameters<NonNullable<NonNullable<CollectionConfig['hooks']>['beforeChange']>[number]>[0]['req'],
-  section: string,
-  categoryId: number | string,
-  slug: string,
-) => {
-  const category = await req.payload.findByID({ collection: 'categories', id: categoryId, depth: 1, req })
-  if (category.section !== section) {
-    throw new ValidationError({ errors: [{ path: 'category', message: 'Category must belong to the article’s section.' }] })
-  }
-  const parent = category.parent && typeof category.parent === 'object' ? category.parent : null
-  return ['', section, parent?.slug, category.slug, slug].filter((p) => p !== undefined && p !== null).join('/')
-}
 
 export const Articles: CollectionConfig = {
   slug: 'articles',
@@ -83,7 +64,7 @@ export const Articles: CollectionConfig = {
           data.publishedAt = new Date().toISOString()
         }
 
-        const section = data.section ?? originalDoc?.section
+        const section = idOf(data.section ?? originalDoc?.section)
         const slug = data.slug ?? originalDoc?.slug
         const categoryId = idOf(data.category ?? originalDoc?.category)
         if (section && slug && categoryId) {
@@ -104,10 +85,10 @@ export const Articles: CollectionConfig = {
           })
           if (clash.totalDocs > 0) {
             throw new ValidationError({
-              errors: [{ path: 'slug', message: `Another ${section} article already uses this slug.` }],
+              errors: [{ path: 'slug', message: 'Another article in this section already uses this slug.' }],
             })
           }
-          data.path = await buildPath(req, section, categoryId, slug)
+          data.path = await buildArticlePath(req.payload, req, section, categoryId, slug)
         }
 
         // Redirects follow the last *published* URL, so autosaved drafts never create them.
@@ -177,8 +158,7 @@ export const Articles: CollectionConfig = {
           ],
         },
         {
-          label: 'News desk',
-          admin: { condition: (data) => isNews(data) },
+          label: 'Sources & extras',
           fields: [
             {
               name: 'sources',
@@ -210,8 +190,8 @@ export const Articles: CollectionConfig = {
               name: 'relatedExplainer',
               type: 'relationship',
               relationTo: 'articles',
-              filterOptions: { section: { equals: 'explainers' } },
-              admin: { description: '"Need the backstory?" link.' },
+              filterOptions: { 'section.kind': { equals: 'evergreen' } },
+              admin: { description: '"Need the backstory?" link to an explainer.' },
             },
           ],
         },
@@ -220,18 +200,19 @@ export const Articles: CollectionConfig = {
     // Sidebar
     {
       name: 'section',
-      type: 'select',
+      type: 'relationship',
+      relationTo: 'sections',
       required: true,
-      options: [...SECTIONS],
-      admin: { position: 'sidebar' },
+      index: true,
+      admin: { position: 'sidebar', description: 'The desk, e.g. World News or Explainers.' },
     },
     {
       name: 'category',
       type: 'relationship',
       relationTo: 'categories',
       required: true,
-      admin: { position: 'sidebar', description: 'Region (news) or subject (explainers). Sets the URL.' },
-      filterOptions: ({ data }) => (data?.section ? { section: { equals: data.section } } : true),
+      admin: { position: 'sidebar', description: 'Region, subject or sub-category within the section. Sets the URL.' },
+      filterOptions: ({ data }) => (data?.section ? { section: { equals: idOf(data.section) } } : true),
     },
     slugField('title'),
     { name: 'tags', type: 'relationship', relationTo: 'tags', hasMany: true, admin: { position: 'sidebar' } },
@@ -258,7 +239,7 @@ export const Articles: CollectionConfig = {
       admin: { position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'Set automatically on first publish.' },
     },
     { name: 'featured', type: 'checkbox', admin: { position: 'sidebar', description: 'Lead story / The Long Read slot.' } },
-    { name: 'topStory', type: 'checkbox', admin: { position: 'sidebar', description: 'Top story on World News.' } },
+    { name: 'topStory', type: 'checkbox', admin: { position: 'sidebar', description: 'Top story on its section page.' } },
     {
       type: 'collapsible',
       label: 'Computed',

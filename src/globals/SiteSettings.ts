@@ -18,6 +18,18 @@ export const SiteSettings: GlobalConfig = {
       admin: { description: 'Show an in-feed ad after every N stories.' },
     },
     {
+      name: 'navExtras',
+      type: 'array',
+      label: 'Extra navigation links',
+      admin: {
+        description: 'Sections marked "Show in nav" appear automatically. Add anything else here (e.g. Puzzles, The Newsreel).',
+      },
+      fields: [
+        { name: 'label', type: 'text', required: true },
+        { name: 'url', type: 'text', required: true },
+      ],
+    },
+    {
       name: 'socials',
       type: 'group',
       fields: [

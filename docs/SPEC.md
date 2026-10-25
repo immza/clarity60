@@ -84,7 +84,7 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 ## 5. Data model (Supabase Postgres; Payload owns the schema via migrations)
 
 ### Articles
-- **Identity:** `type` (news | explainer), `title`, `slug` (unique per section), `summary`.
+- **Identity:** `section` (→ Sections), `title`, `slug` (unique per section), `summary`.
 - **Media and body:** `heroMedia` (image or video), `body` (Lexical rich text).
 - **Classification:** `category` (primary, required), `tags[]`, `authors[]`, `bylineOverride` (e.g. "Clarity60 Desk").
 - **Workflow:** `status` (draft | in_review | scheduled | published), `publishedAt`, `updatedAt`.
@@ -93,8 +93,17 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 - **News only:** `sources[]` (outlet and URL), `developingUpdates[]` (timestamp and text), `relatedExplainer`, `instagramUrl`.
 - **SEO:** `metaTitle`, `metaDescription`, `ogImage`, `canonical`, `noindex`.
 
+### Structure is data, not code
+Sections, categories, sub-categories and navigation are all edited in the admin; adding a desk
+(e.g. Business) or a sub-category needs no code change.
+
+- **Sections:** `name`, `slug` (reserved words blocked), `kind` (news | evergreen → schema type and
+  Google News sitemap), `kicker`, `description`, `showInNav`, `sortOrder`, `previousSlugs`.
+- **Renames are safe:** renaming a section or category, or moving a sub-category, records the old slug,
+  queues a background job that refreshes every affected article URL, and old links 301 to the new ones.
+
 ### Supporting collections
-- **Categories:** `section`, `parent?`, `name`, `slug`, `description`, `seo`.
+- **Categories:** `section` (→ Sections), `parent?`, `name`, `slug`, `description`, `sortOrder`, `previousSlugs`.
 - **Tags:** `name`, `slug`, `description`.
 - **Authors:** schema `Person`. Fields: `name`, `slug`, `bio`, `credentials`, `socials`, `photo`, `staffUser?`.
 - **Media:** `file`, `alt` (required), `credit` (required), `license`.
@@ -102,7 +111,7 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 - **Corrections:** `article`, `text`, `date`.
 - **Pages:** static pages.
 - **AdSlots:** `key`, `mode` (off | adsense | direct), `size`, `adsenseSlotId`, `creative`, `link`.
-- **SiteSettings:** a global holding nav, socials, wire config, and in-feed ad frequency (default every 6 stories).
+- **SiteSettings:** a global holding extra nav links, socials, tagline, and in-feed ad frequency (default every 6 stories).
 - **AuditLog** and **ArticleViewsDaily** (`article`, `date`, `count`).
 
 ### Phase 2 additions
