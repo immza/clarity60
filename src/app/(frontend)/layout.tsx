@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, Playfair_Display, Source_Serif_4 } from 'next/font/google'
 import React from 'react'
 
+import { Analytics } from '@/components/consent/Analytics'
+import { consentDefaultsScript } from '@/components/consent/consent'
 import { Footer } from '@/components/footer/Footer'
 import { themeInitScript } from '@/components/header/EditionToggle'
 import './styles.css'
@@ -41,6 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Sets Morning/Night Edition before first paint so the page never flashes. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* Consent Mode v2 defaults must run before any Google tag. */}
+        {process.env.NEXT_PUBLIC_GA_ID && <script dangerouslySetInnerHTML={{ __html: consentDefaultsScript }} />}
       </head>
       <body>
         <a href="#main" className="skip-link">
@@ -48,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         {children}
         <Footer />
+        <Analytics />
       </body>
     </html>
   )

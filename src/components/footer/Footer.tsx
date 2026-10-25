@@ -1,11 +1,13 @@
 import Link from 'next/link'
 
+import { CookieSettingsLink } from '@/components/consent/ConsentBanner'
 import { getLatestCorrection } from '@/lib/data'
 
 import './footer.css'
 
 const LINKS = [
   { label: 'About', href: '/about' },
+  { label: 'Corrections', href: '/corrections' },
   { label: 'Advertise', href: '/advertise' },
   { label: 'Contact', href: '/contact' },
   { label: 'Privacy', href: '/privacy' },
@@ -30,7 +32,10 @@ export async function Footer() {
                   <Link href={correction.path} prefetch={false}>
                     Read the story
                   </Link>
-                )}
+                )}{' '}
+                <Link href="/corrections" prefetch={false}>
+                  All corrections
+                </Link>
               </>
             ) : (
               'When we get something wrong, we say so here, plainly.'
@@ -46,6 +51,11 @@ export async function Footer() {
                   </Link>
                 </li>
               ))}
+              {process.env.NEXT_PUBLIC_GA_ID && (
+                <li>
+                  <CookieSettingsLink />
+                </li>
+              )}
             </ul>
           </div>
         </div>

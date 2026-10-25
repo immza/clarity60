@@ -60,3 +60,16 @@
 .footer__links a:hover {
   text-decoration: underline;
 }
+
+.footer__linkbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.footer__linkbtn:hover {
+  text-decoration: underline;
+}

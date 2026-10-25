@@ -5,6 +5,7 @@
 import { getPayload } from 'payload'
 
 import config from '../payload.config'
+import { PAGE_TEMPLATES } from './pageTemplates'
 
 const NEWS_REGIONS = [
   ['Asia', 'asia'],
@@ -115,6 +116,23 @@ await ensure('promotions', { title: { equals: 'Advertise with us' } }, {
   link: '/advertise',
   weight: 1,
 })
+
+// Standard pages, published once with starter text; edit them in Admin → Pages.
+for (const tpl of PAGE_TEMPLATES) {
+  const exists = await payload.count({ collection: 'pages', where: { slug: { equals: tpl.slug } } })
+  if (exists.totalDocs) continue
+  await payload.create({
+    collection: 'pages',
+    data: {
+      title: tpl.title,
+      slug: tpl.slug,
+      body: tpl.body as never,
+      meta: { title: `${tpl.title} · Clarity60`, description: tpl.description },
+      _status: 'published',
+    },
+  })
+  payload.logger.info(`seed: page /${tpl.slug}`)
+}
 
 payload.logger.info('seed: done')
 process.exit(0)

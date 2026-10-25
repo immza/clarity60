@@ -391,3 +391,19 @@ export const getActivePromotions = unstable_cache(
   // Also time-based so scheduled promos start and stop without a publish.
   { tags: [TAGS.settings], revalidate: 600 },
 )
+
+/** Every correction, newest first, for the public corrections page. */
+export const getAllCorrections = unstable_cache(
+  async (page: number) => {
+    return (await payload()).find({
+      collection: 'corrections',
+      sort: '-date',
+      depth: 1,
+      page,
+      limit: 50,
+      overrideAccess: false,
+    })
+  },
+  ['all-corrections'],
+  { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
+)

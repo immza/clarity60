@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    const adminRoute = process.env.PAYLOAD_ADMIN_ROUTE || '/admin'
+    return [
+      // The admin panel must never appear in search results.
+      { source: `${adminRoute}/:path*`, headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+      { source: adminRoute, headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+    ]
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],

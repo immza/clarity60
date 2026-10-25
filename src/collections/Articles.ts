@@ -4,6 +4,7 @@ import { Forbidden, ValidationError } from 'payload'
 import { editorsOnly, isEditorOrAbove, isStaff, publishedOrStaff, roleOf, staffOnly } from '@/access/roles'
 import { slugField } from '@/fields/slug'
 import { buildArticlePath, upsertArticleRedirect } from '@/lib/articlePath'
+import { pingIndexNow } from '@/lib/indexnow'
 import { idOf } from '@/lib/relations'
 import { columnInchesFor, countWords, hasAffiliateContent, readingMinutesFor } from '@/lib/text'
 
@@ -109,6 +110,13 @@ export const Articles: CollectionConfig = {
         delete req.context[`redirectFrom:${doc.id}`]
 
         await upsertArticleRedirect(req.payload, req, oldPath, doc.path, doc.id)
+        return doc
+      },
+      ({ doc, req }) => {
+        // Ping IndexNow on publish/update of a live article; never block the save on it.
+        if (doc._status === 'published' && doc.path && req.query?.autosave !== 'true') {
+          void pingIndexNow([doc.path]).catch((err) => req.payload.logger.warn({ err }, 'IndexNow ping failed'))
+        }
         return doc
       },
     ],
