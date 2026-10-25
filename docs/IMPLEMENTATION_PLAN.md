@@ -131,7 +131,7 @@ Enable 2FA on every account.
 
 ## Phase 2: Readers (about 1–2 weeks after launch)
 
-- **Reader sign-in:** Supabase Auth with Google, Facebook and Apple.
+- **Reader sign-in:** Supabase Auth with Google, Facebook and Apple. The Sign in / account button sits in the masthead's top-right group, beside the edition stamp.
   - **[YOU]** Set up the Meta app review and the Apple Services ID.
 - **ReaderProfiles:** created on first login.
 - **Comments, Reports and Saves:** all reader tables protected by RLS.
@@ -146,6 +146,7 @@ Enable 2FA on every account.
 
 - Newsreel through the Instagram Graph API, via a scheduled job, as a static grid.
 - Newsletter (Sunday Edition), Puzzles and Back Issues.
+- A search button in the masthead's top-right group (search page and Postgres full-text search).
 - Apply for AdSense and switch slot modes on.
 
 ---
