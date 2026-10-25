@@ -17,7 +17,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             Clarity60 · Stop the presses
           </p>
           <h1 style={{ fontSize: 34, margin: '8px 0 12px' }}>Something went wrong on our end.</h1>
-          <p>We have been notified and are fixing it.</p>
+          <p>Please try again in a moment. If it keeps happening, email hello@clarity60.com.</p>
           <button
             type="button"
             onClick={reset}
