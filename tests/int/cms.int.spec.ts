@@ -147,6 +147,23 @@ describe('roles', () => {
     await payload.update({ collection: 'users', id: writer.id, data: { role: 'writer' }, overrideAccess: true })
   })
 
+  it('a writer cannot change or unpublish their own article once it is live', async () => {
+    const doc = await draftArticle(writer, { title: 'Writer Story Gone Live' })
+    await payload.update({ collection: 'articles', id: doc.id, data: { _status: 'published' }, ...asUser(editor) })
+
+    // Omitted _status (Payload would write the main doc as a draft) and explicit draft both refused.
+    await expect(
+      payload.update({ collection: 'articles', id: doc.id, data: { title: 'Changed live' }, ...asUser(writer) }),
+    ).rejects.toThrow()
+    await expect(
+      payload.update({ collection: 'articles', id: doc.id, data: { _status: 'draft' }, ...asUser(writer) }),
+    ).rejects.toThrow()
+
+    const live = await payload.findByID({ collection: 'articles', id: doc.id })
+    expect(live._status).toBe('published')
+    expect(live.title).toBe('Writer Story Gone Live')
+  })
+
   it('writers cannot delete articles or create staff accounts', async () => {
     const doc = await draftArticle(writer)
     await expect(payload.delete({ collection: 'articles', id: doc.id, ...asUser(writer) })).rejects.toThrow()
@@ -207,7 +224,74 @@ describe('urls', () => {
   })
 })
 
+describe('safe edits', () => {
+  it('a title-only edit keeps the existing slug and URL', async () => {
+    const doc = await draftArticle(editor, { title: 'Original Headline' })
+    const renamed = await payload.update({
+      collection: 'articles',
+      id: doc.id,
+      data: { title: 'A Better Headline' },
+      draft: true,
+      ...asUser(editor),
+    })
+    expect(renamed.slug).toBe('original-headline')
+    expect(renamed.path).toBe('/news/asia/original-headline')
+  })
+
+  it('a draft (autosave) URL change only redirects once the new URL is published', async () => {
+    const doc = await draftArticle(editor, { title: 'Autosaved Move' })
+    await payload.update({ collection: 'articles', id: doc.id, data: { _status: 'published' }, ...asUser(editor) })
+
+    await payload.update({ collection: 'articles', id: doc.id, data: { category: europe.id }, draft: true, ...asUser(editor) })
+    const early = await payload.find({ collection: 'redirects', where: { from: { equals: '/news/asia/autosaved-move' } } })
+    expect(early.totalDocs).toBe(0)
+
+    await payload.update({
+      collection: 'articles',
+      id: doc.id,
+      data: { category: europe.id, _status: 'published' },
+      ...asUser(editor),
+    })
+    const after = await payload.find({ collection: 'redirects', where: { from: { equals: '/news/asia/autosaved-move' } } })
+    expect(after.totalDocs).toBe(1)
+  })
+
+  it('deleting an article also removes its corrections', async () => {
+    const doc = await draftArticle(editor, { title: 'Corrected Story' })
+    await payload.create({ collection: 'corrections', data: { article: doc.id, text: 'Fixed a date.', date: new Date().toISOString() }, overrideAccess: true })
+    await payload.delete({ collection: 'articles', id: doc.id, ...asUser(editor) })
+    const left = await payload.find({ collection: 'corrections', where: { article: { equals: doc.id } } })
+    expect(left.totalDocs).toBe(0)
+  })
+})
+
 describe('categories', () => {
+  it('a category with sub-categories cannot itself be nested', async () => {
+    const geography = await payload.create({
+      collection: 'categories',
+      data: { name: 'Geo Parent', slug: '', section: 'explainers' },
+      overrideAccess: true,
+    })
+    const parentWithChild = await payload.create({
+      collection: 'categories',
+      data: { name: 'Has Child', slug: '', section: 'explainers' },
+      overrideAccess: true,
+    })
+    await payload.create({
+      collection: 'categories',
+      data: { name: 'The Child', slug: '', section: 'explainers', parent: parentWithChild.id },
+      overrideAccess: true,
+    })
+    await expect(
+      payload.update({
+        collection: 'categories',
+        id: parentWithChild.id,
+        data: { parent: geography.id },
+        ...asUser(editor),
+      }),
+    ).rejects.toThrow()
+  })
+
   it('allows two levels but not three', async () => {
     const ancient = await payload.create({
       collection: 'categories',

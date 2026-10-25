@@ -239,6 +239,10 @@ export interface Article {
    */
   topStory?: boolean | null;
   path?: string | null;
+  /**
+   * URL at last publish.
+   */
+  publishedPath?: string | null;
   wordCount?: number | null;
   columnInches?: number | null;
   readingMinutes?: number | null;
@@ -775,6 +779,7 @@ export interface ArticlesSelect<T extends boolean = true> {
   featured?: T;
   topStory?: T;
   path?: T;
+  publishedPath?: T;
   wordCount?: T;
   columnInches?: T;
   readingMinutes?: T;

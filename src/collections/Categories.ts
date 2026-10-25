@@ -27,6 +27,19 @@ export const Categories: CollectionConfig = {
         const parentId = data.parent === undefined ? originalDoc?.parent : data.parent
         const id = originalDoc?.id
 
+        if (parentId && id) {
+          const children = await req.payload.count({
+            collection: 'categories',
+            where: { parent: { equals: id } },
+            req,
+          })
+          if (children.totalDocs > 0) {
+            throw new ValidationError({
+              errors: [{ path: 'parent', message: 'This category has sub-categories, so it must stay top-level.' }],
+            })
+          }
+        }
+
         if (parentId) {
           const parent = await req.payload.findByID({
             collection: 'categories',

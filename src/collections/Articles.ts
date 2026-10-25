@@ -42,10 +42,16 @@ export const Articles: CollectionConfig = {
   access: {
     read: publishedOrStaff,
     create: staffOnly,
-    // Writers may only edit their own articles; publishing is blocked in beforeChange.
+    // Writers may only edit their own unpublished articles. Once live, only editors can
+    // change or unpublish it. Publishing itself is also blocked in beforeChange.
     update: ({ req: { user } }) => {
       if (isEditorOrAbove(user)) return true
-      if (isStaff(user) && user) return { createdBy: { equals: user.id } } satisfies Where
+      if (isStaff(user) && user) {
+        const ownUnpublished: Where = {
+          and: [{ createdBy: { equals: user.id } }, { _status: { not_equals: 'published' } }],
+        }
+        return ownUnpublished
+      }
       return false
     },
     delete: editorsOnly,
@@ -103,14 +109,22 @@ export const Articles: CollectionConfig = {
           }
           data.path = await buildPath(req, section, categoryId, slug)
         }
+
+        // Redirects follow the last *published* URL, so autosaved drafts never create them.
+        if (data._status === 'published' && data.path) {
+          const previous = originalDoc?.publishedPath
+          if (previous && previous !== data.path) req.context[`redirectFrom:${originalDoc.id}`] = previous
+          data.publishedPath = data.path
+        }
         return data
       },
     ],
     afterChange: [
-      async ({ doc, previousDoc, req }) => {
+      async ({ doc, req }) => {
         // Keep old URLs alive: when a published article's URL changes, 301 the old path to it.
-        const oldPath = previousDoc?.path
-        if (!oldPath || oldPath === doc.path || previousDoc?._status !== 'published') return doc
+        const oldPath = req.context[`redirectFrom:${doc.id}`]
+        if (typeof oldPath !== 'string' || doc._status !== 'published') return doc
+        delete req.context[`redirectFrom:${doc.id}`]
 
         await req.payload.delete({
           collection: 'redirects',
@@ -129,6 +143,17 @@ export const Articles: CollectionConfig = {
           req,
         })
         return doc
+      },
+    ],
+    beforeDelete: [
+      async ({ id, req }) => {
+        // Corrections cannot outlive their article (article_id is NOT NULL).
+        await req.payload.delete({
+          collection: 'corrections',
+          where: { article: { equals: id } },
+          overrideAccess: true,
+          req,
+        })
       },
     ],
   },
@@ -240,6 +265,7 @@ export const Articles: CollectionConfig = {
       admin: { position: 'sidebar', initCollapsed: true },
       fields: [
         { name: 'path', type: 'text', index: true, unique: true, admin: { readOnly: true } },
+        { name: 'publishedPath', type: 'text', admin: { readOnly: true, description: 'URL at last publish.' } },
         { name: 'wordCount', type: 'number', admin: { readOnly: true } },
         { name: 'columnInches', type: 'number', admin: { readOnly: true } },
         { name: 'readingMinutes', type: 'number', admin: { readOnly: true } },

@@ -18,9 +18,14 @@ export const slugField = (sourceField = 'title'): TextField => ({
   },
   hooks: {
     beforeValidate: [
-      ({ value, data }) => {
-        const raw = typeof value === 'string' && value.trim() ? value : data?.[sourceField]
-        return typeof raw === 'string' ? slugify(raw) : value
+      ({ value, data, operation }) => {
+        if (typeof value === 'string' && value.trim()) return slugify(value)
+        // Only regenerate on create or when the slug was explicitly cleared, so a
+        // title-only edit never silently changes a live URL.
+        const cleared = Boolean(data && 'slug' in data)
+        if (operation !== 'create' && !cleared) return value
+        const source = data?.[sourceField]
+        return typeof source === 'string' ? slugify(source) : value
       },
     ],
   },
