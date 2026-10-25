@@ -12,7 +12,7 @@ const earField = (name: string, label: string, defaults: EarDefaults): Field => 
   label,
   type: 'group',
   fields: [
-    { name: 'enabled', type: 'checkbox', defaultValue: true },
+    { name: 'enabled', type: 'checkbox', defaultValue: false },
     {
       name: 'kind',
       type: 'select',
@@ -51,7 +51,7 @@ export const SiteSettings: GlobalConfig = {
     },
     {
       type: 'collapsible',
-      label: 'Masthead ears (the boxes beside CLARITY60 on the front page)',
+      label: 'Masthead ears (optional boxes beside CLARITY60 on the front page; off by default)',
       fields: [earField('leftEar', 'Left ear', {
         kind: 'custom',
         label: 'Follow @theclarity60',

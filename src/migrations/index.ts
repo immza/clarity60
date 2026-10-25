@@ -1,5 +1,6 @@
 import * as migration_20261025_080824_initial from './20261025_080824_initial';
 import * as migration_20261025_093601_masthead_ears from './20261025_093601_masthead_ears';
+import * as migration_20261025_093956_ears_off_by_default from './20261025_093956_ears_off_by_default';
 
 export const migrations = [
   {
@@ -10,6 +11,11 @@ export const migrations = [
   {
     up: migration_20261025_093601_masthead_ears.up,
     down: migration_20261025_093601_masthead_ears.down,
-    name: '20261025_093601_masthead_ears'
+    name: '20261025_093601_masthead_ears',
+  },
+  {
+    up: migration_20261025_093956_ears_off_by_default.up,
+    down: migration_20261025_093956_ears_off_by_default.down,
+    name: '20261025_093956_ears_off_by_default'
   },
 ];
