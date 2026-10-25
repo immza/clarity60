@@ -3,5 +3,6 @@ export const TAGS = {
   sections: 'sections',
   categories: 'categories',
   articles: 'articles',
+  pages: 'pages',
   settings: 'site-settings',
 } as const

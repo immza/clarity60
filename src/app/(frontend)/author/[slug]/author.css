@@ -1,0 +1,29 @@
+.author-head {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.author-head__photo {
+  flex: none;
+  width: 96px;
+  aspect-ratio: 1;
+  border: 1px solid var(--rule);
+}
+
+.author-head__creds {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.author-head__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}

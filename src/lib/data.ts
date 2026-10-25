@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache'
-import { getPayload } from 'payload'
+import { getPayload, type Where } from 'payload'
 
 import { TAGS } from '@/lib/cacheTags'
 import config from '@/payload.config'
@@ -108,4 +108,212 @@ export const getSectionCategories = unstable_cache(
   },
   ['section-categories'],
   { tags: [TAGS.categories], revalidate: FALLBACK_REVALIDATE },
+)
+
+/** Fields a story card needs; keeps list queries light. */
+const CARD_SELECT = {
+  title: true,
+  summary: true,
+  path: true,
+  publishedAt: true,
+  columnInches: true,
+  readingMinutes: true,
+  heroMedia: true,
+  category: true,
+  section: true,
+  instagramUrl: true,
+  featured: true,
+  topStory: true,
+  developing: true,
+} as const
+
+export type ListArgs = {
+  sectionId?: number
+  categoryIds?: number[]
+  tagId?: number
+  authorId?: number
+  excludeIds?: number[]
+  featured?: boolean
+  topStory?: boolean
+  page?: number
+  limit?: number
+}
+
+/** Published stories, newest first, for any listing (front page, section, category, tag, author). */
+export const listArticles = unstable_cache(
+  async (args: ListArgs) => {
+    const and: Where[] = []
+    if (args.sectionId) and.push({ section: { equals: args.sectionId } })
+    if (args.categoryIds?.length) and.push({ category: { in: args.categoryIds } })
+    if (args.tagId) and.push({ tags: { in: [args.tagId] } })
+    if (args.authorId) and.push({ authors: { in: [args.authorId] } })
+    if (args.excludeIds?.length) and.push({ id: { not_in: args.excludeIds } })
+    if (args.featured) and.push({ featured: { equals: true } })
+    if (args.topStory) and.push({ topStory: { equals: true } })
+    return (await payload()).find({
+      collection: 'articles',
+      where: { and },
+      sort: '-publishedAt',
+      depth: 1,
+      page: args.page ?? 1,
+      limit: args.limit ?? 12,
+      overrideAccess: false,
+      select: CARD_SELECT,
+    })
+  },
+  ['list-articles'],
+  { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
+)
+
+export type CardArticle = Awaited<ReturnType<typeof listArticles>>['docs'][number]
+
+/** A published article by section + slug (unique per section), fully populated for its page. */
+export const getArticle = unstable_cache(
+  async (sectionId: number, slug: string) => {
+    const { docs } = await (await payload()).find({
+      collection: 'articles',
+      where: { and: [{ section: { equals: sectionId } }, { slug: { equals: slug } }] },
+      depth: 2,
+      limit: 1,
+      overrideAccess: false,
+    })
+    return docs[0] ?? null
+  },
+  ['article'],
+  { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
+)
+
+/** Category by slug (current or previous) within a section and parent. */
+export const getCategory = unstable_cache(
+  async (sectionId: number, slug: string, parentId: number | null) => {
+    const { docs } = await (await payload()).find({
+      collection: 'categories',
+      where: {
+        and: [
+          { section: { equals: sectionId } },
+          { or: [{ slug: { equals: slug } }, { previousSlugs: { in: [slug] } }] },
+          parentId ? { parent: { equals: parentId } } : { parent: { exists: false } },
+        ],
+      },
+      depth: 1,
+      limit: 1,
+      overrideAccess: false,
+    })
+    return docs[0] ?? null
+  },
+  ['category'],
+  { tags: [TAGS.categories], revalidate: FALLBACK_REVALIDATE },
+)
+
+export const getSubcategories = unstable_cache(
+  async (parentId: number) => {
+    const { docs } = await (await payload()).find({
+      collection: 'categories',
+      where: { parent: { equals: parentId } },
+      sort: 'sortOrder',
+      depth: 0,
+      limit: 100,
+      overrideAccess: false,
+    })
+    return docs
+  },
+  ['subcategories'],
+  { tags: [TAGS.categories], revalidate: FALLBACK_REVALIDATE },
+)
+
+/** Exact-path redirect, resolved to its current target URL. */
+export const getRedirect = unstable_cache(
+  async (from: string) => {
+    const { docs } = await (await payload()).find({
+      collection: 'redirects',
+      where: { from: { equals: from } },
+      depth: 1,
+      limit: 1,
+      overrideAccess: true,
+    })
+    const r = docs[0]
+    if (!r) return null
+    if (r.to?.type === 'custom') return r.to.url ?? null
+    const ref = r.to?.reference?.value
+    return ref && typeof ref === 'object' && 'path' in ref && typeof ref.path === 'string' ? ref.path : null
+  },
+  ['redirect'],
+  { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
+)
+
+export const getTag = unstable_cache(
+  async (slug: string) => {
+    const { docs } = await (await payload()).find({
+      collection: 'tags',
+      where: { slug: { equals: slug } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+    })
+    return docs[0] ?? null
+  },
+  ['tag'],
+  { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
+)
+
+export const getAuthor = unstable_cache(
+  async (slug: string) => {
+    const { docs } = await (await payload()).find({
+      collection: 'authors',
+      where: { slug: { equals: slug } },
+      depth: 1,
+      limit: 1,
+      overrideAccess: false,
+    })
+    return docs[0] ?? null
+  },
+  ['author'],
+  { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
+)
+
+export const getPage = unstable_cache(
+  async (slug: string) => {
+    const { docs } = await (await payload()).find({
+      collection: 'pages',
+      where: { slug: { equals: slug } },
+      depth: 1,
+      limit: 1,
+      overrideAccess: false,
+    })
+    return docs[0] ?? null
+  },
+  ['page'],
+  { tags: [TAGS.pages], revalidate: FALLBACK_REVALIDATE },
+)
+
+export const getAdSlot = unstable_cache(
+  async (key: string) => {
+    const { docs } = await (await payload()).find({
+      collection: 'ad-slots',
+      where: { key: { equals: key } },
+      depth: 1,
+      limit: 1,
+      overrideAccess: false,
+    })
+    return docs[0] ?? null
+  },
+  ['ad-slot'],
+  { tags: [TAGS.settings], revalidate: FALLBACK_REVALIDATE },
+)
+
+/** Corrections attached to one article, newest first. */
+export const getCorrectionsFor = unstable_cache(
+  async (articleId: number) => {
+    const { docs } = await (await payload()).find({
+      collection: 'corrections',
+      where: { article: { equals: articleId } },
+      sort: '-date',
+      depth: 0,
+      limit: 20,
+      overrideAccess: false,
+    })
+    return docs
+  },
+  ['corrections-for'],
+  { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
 )

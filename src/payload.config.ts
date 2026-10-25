@@ -42,6 +42,8 @@ const CACHE_TAGS: Partial<Record<string, string[]>> = {
   media: [TAGS.articles],
   corrections: [TAGS.articles],
   'ad-slots': [TAGS.settings],
+  pages: [TAGS.pages],
+  tags: [TAGS.articles],
 }
 
 /** Adds audit logging (every collection but the log itself) and public cache clearing. */
@@ -125,7 +127,10 @@ export default buildConfig({
       overrides: {
         admin: { group: 'Admin' },
         access: { read: editorsOnly, create: editorsOnly, update: editorsOnly, delete: editorsOnly },
-        hooks: { afterChange: [auditAfterChange], afterDelete: [auditAfterDelete] },
+        hooks: {
+          afterChange: [auditAfterChange, revalidateAfterChange(TAGS.articles)],
+          afterDelete: [auditAfterDelete, revalidateAfterDelete(TAGS.articles)],
+        },
       },
     }),
     // Must stay last: it wraps every collection's access with the TOTP check.

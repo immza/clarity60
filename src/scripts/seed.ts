@@ -33,6 +33,7 @@ const AD_SLOTS = [
   ['Section sidebar', 'section-sidebar', '300x250'],
   ['Article sidebar', 'article-sidebar', '300x250'],
   ['Article in-body', 'article-in-body', 'in-feed'],
+  ['Section in-feed', 'section-in-feed', 'in-feed'],
 ] as const
 
 const payload = await getPayload({ config })

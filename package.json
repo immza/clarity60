@@ -20,7 +20,8 @@
     "typecheck": "tsc --noEmit",
     "seed": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed.ts",
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
-    "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create"
+    "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
+    "seed:demo": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.92.0",
