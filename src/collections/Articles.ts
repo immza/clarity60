@@ -3,7 +3,7 @@ import { Forbidden, ValidationError } from 'payload'
 
 import { editorsOnly, isEditorOrAbove, isStaff, publishedOrStaff, roleOf, staffOnly } from '@/access/roles'
 import { slugField } from '@/fields/slug'
-import { buildArticlePath } from '@/lib/articlePath'
+import { buildArticlePath, upsertArticleRedirect } from '@/lib/articlePath'
 import { idOf } from '@/lib/relations'
 import { columnInchesFor, countWords, readingMinutesFor } from '@/lib/text'
 
@@ -107,22 +107,7 @@ export const Articles: CollectionConfig = {
         if (typeof oldPath !== 'string' || doc._status !== 'published') return doc
         delete req.context[`redirectFrom:${doc.id}`]
 
-        await req.payload.delete({
-          collection: 'redirects',
-          where: { from: { equals: doc.path } },
-          overrideAccess: true,
-          req,
-        })
-        await req.payload.create({
-          collection: 'redirects',
-          data: {
-            from: oldPath,
-            to: { type: 'reference', reference: { relationTo: 'articles', value: doc.id } },
-            type: '301',
-          },
-          overrideAccess: true,
-          req,
-        })
+        await upsertArticleRedirect(req.payload, req, oldPath, doc.path, doc.id)
         return doc
       },
     ],

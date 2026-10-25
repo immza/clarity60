@@ -37,10 +37,18 @@ export const Sections: CollectionConfig = {
     afterChange: [queuePathRefresh('section')],
     beforeDelete: [
       async ({ id, req }) => {
-        const { totalDocs } = await req.payload.count({ collection: 'articles', where: { section: { equals: id } }, req })
-        if (totalDocs > 0) {
+        const [articles, categories] = await Promise.all([
+          req.payload.count({ collection: 'articles', where: { section: { equals: id } }, req }),
+          req.payload.count({ collection: 'categories', where: { section: { equals: id } }, req }),
+        ])
+        if (articles.totalDocs > 0 || categories.totalDocs > 0) {
           throw new ValidationError({
-            errors: [{ path: 'id', message: `This section still has ${totalDocs} article(s). Move them first.` }],
+            errors: [
+              {
+                path: 'id',
+                message: `This section still has ${articles.totalDocs} article(s) and ${categories.totalDocs} categor(ies). Move or delete them first.`,
+              },
+            ],
           })
         }
       },

@@ -43,3 +43,24 @@ export const trackPreviousSlug = ({
   data.previousSlugs = [...history]
   return data
 }
+
+/** 301 `from` → the article (by reference, so later moves never chain), clearing any loop at `to`. */
+export const upsertArticleRedirect = async (
+  payload: Payload,
+  req: PayloadRequest | undefined,
+  from: string,
+  to: string,
+  articleId: number | string,
+) => {
+  await payload.delete({ collection: 'redirects', where: { from: { in: [to, from] } }, overrideAccess: true, req })
+  await payload.create({
+    collection: 'redirects',
+    data: {
+      from,
+      to: { type: 'reference', reference: { relationTo: 'articles', value: articleId as number } },
+      type: '301',
+    },
+    overrideAccess: true,
+    req,
+  })
+}

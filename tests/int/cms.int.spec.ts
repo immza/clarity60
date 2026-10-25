@@ -375,6 +375,42 @@ describe('flexible structure', () => {
     const after = await payload.findByID({ collection: 'articles', id: doc.id })
     expect(after.path).toBe('/news/pacific/reef-report')
     expect(after._status).toBe('published')
+    const redirect = await payload.find({ collection: 'redirects', where: { from: { equals: '/news/oceania/reef-report' } } })
+    expect(redirect.totalDocs).toBe(1)
+  })
+
+  it('structure that is in use cannot be deleted or moved out from under its articles', async () => {
+    const sec = await payload.create({
+      collection: 'sections',
+      data: { name: 'Sport', slug: '', kind: 'news' },
+      overrideAccess: true,
+    })
+    const football = await payload.create({
+      collection: 'categories',
+      data: { name: 'Football', slug: '', section: sec.id },
+      overrideAccess: true,
+    })
+    await draftArticle(editor, { title: 'Derby Day', section: sec.id, category: football.id })
+
+    await expect(payload.delete({ collection: 'categories', id: football.id, ...asUser(superAdmin) })).rejects.toThrow()
+    await expect(payload.delete({ collection: 'sections', id: sec.id, ...asUser(superAdmin) })).rejects.toThrow()
+    await expect(
+      payload.update({ collection: 'categories', id: football.id, data: { section: newsSection.id }, ...asUser(editor) }),
+    ).rejects.toThrow()
+
+    const empty = await payload.create({
+      collection: 'sections',
+      data: { name: 'Empty Desk', slug: '', kind: 'evergreen' },
+      overrideAccess: true,
+    })
+    const unused = await payload.create({
+      collection: 'categories',
+      data: { name: 'Unused', slug: '', section: empty.id },
+      overrideAccess: true,
+    })
+    await expect(payload.delete({ collection: 'sections', id: empty.id, ...asUser(superAdmin) })).rejects.toThrow()
+    await payload.delete({ collection: 'categories', id: unused.id, ...asUser(superAdmin) })
+    await payload.delete({ collection: 'sections', id: empty.id, ...asUser(superAdmin) })
   })
 })
 

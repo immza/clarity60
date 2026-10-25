@@ -1,12 +1,12 @@
 import type { TaskConfig, Where } from 'payload'
 
-import { buildArticlePath } from '@/lib/articlePath'
+import { buildArticlePath, upsertArticleRedirect } from '@/lib/articlePath'
 import { idOf } from '@/lib/relations'
 
 /**
  * After a section or category is renamed or moved, recompute the stored URL of every
- * article under it. Old URLs keep working through previousSlugs + canonical redirects.
- * Writes only the path columns, so it never touches drafts, versions or publish state.
+ * article under it and 301 each old published URL to the new one. Writes only the path
+ * columns (not a full save), so it never touches drafts, versions or publish state.
  */
 export const refreshArticlePaths: TaskConfig<'refreshArticlePaths'> = {
   slug: 'refreshArticlePaths',
@@ -38,6 +38,9 @@ export const refreshArticlePaths: TaskConfig<'refreshArticlePaths'> = {
           data: { path, ...(article._status === 'published' ? { publishedPath: path } : {}) },
           req,
         })
+        if (article._status === 'published' && article.publishedPath && article.publishedPath !== path) {
+          await upsertArticleRedirect(payload, req, article.publishedPath, path, article.id)
+        }
         updated++
       }
       if (!batch.hasNextPage) break

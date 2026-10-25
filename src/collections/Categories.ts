@@ -21,12 +21,48 @@ export const Categories: CollectionConfig = {
   hooks: {
     beforeChange: [({ data, originalDoc }) => trackPreviousSlug({ data, originalDoc })],
     afterChange: [queuePathRefresh('category')],
+    beforeDelete: [
+      async ({ id, req }) => {
+        const [articles, children] = await Promise.all([
+          req.payload.count({ collection: 'articles', where: { category: { equals: id } }, req }),
+          req.payload.count({ collection: 'categories', where: { parent: { equals: id } }, req }),
+        ])
+        if (articles.totalDocs > 0 || children.totalDocs > 0) {
+          throw new ValidationError({
+            errors: [
+              {
+                path: 'id',
+                message: `This category still has ${articles.totalDocs} article(s) and ${children.totalDocs} sub-category(ies). Move them first.`,
+              },
+            ],
+          })
+        }
+      },
+    ],
     beforeValidate: [
       async ({ data, originalDoc, req }) => {
         if (!data) return data
         const section = idOf(data.section ?? originalDoc?.section)
         const parentId = data.parent === undefined ? originalDoc?.parent : data.parent
         const id = originalDoc?.id
+
+        // Moving a category that is in use to another section would strand its articles.
+        if (id && data.section !== undefined && idOf(originalDoc?.section) !== section) {
+          const [articles, children] = await Promise.all([
+            req.payload.count({ collection: 'articles', where: { category: { equals: id } }, req }),
+            req.payload.count({ collection: 'categories', where: { parent: { equals: id } }, req }),
+          ])
+          if (articles.totalDocs > 0 || children.totalDocs > 0) {
+            throw new ValidationError({
+              errors: [
+                {
+                  path: 'section',
+                  message: 'This category has articles or sub-categories. Move them before changing its section.',
+                },
+              ],
+            })
+          }
+        }
 
         if (parentId && id) {
           const children = await req.payload.count({
