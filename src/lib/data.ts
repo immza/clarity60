@@ -317,3 +317,37 @@ export const getCorrectionsFor = unstable_cache(
   ['corrections-for'],
   { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
 )
+
+/** Every category, for the side navigation drawer. */
+export const getAllCategories = unstable_cache(
+  async () => {
+    const { docs } = await (await payload()).find({
+      collection: 'categories',
+      sort: 'sortOrder',
+      depth: 0,
+      limit: 500,
+      overrideAccess: false,
+      select: { name: true, slug: true, section: true, parent: true, sortOrder: true },
+    })
+    return docs
+  },
+  ['all-categories'],
+  { tags: [TAGS.categories], revalidate: FALLBACK_REVALIDATE },
+)
+
+/** When the newest published story was last published or edited ("Last updated"). */
+export const getLastUpdated = unstable_cache(
+  async () => {
+    const { docs } = await (await payload()).find({
+      collection: 'articles',
+      sort: '-updatedAt',
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+      select: { updatedAt: true },
+    })
+    return docs[0]?.updatedAt ?? null
+  },
+  ['last-updated'],
+  { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
+)

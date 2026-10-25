@@ -1,10 +1,12 @@
 import Link from 'next/link'
 
-import { getSections, getSiteSettings, getWireHeadlines } from '@/lib/data'
+import { getAllCategories, getLastUpdated, getSections, getSiteSettings, getWireHeadlines } from '@/lib/data'
+import { idOf } from '@/lib/relations'
 
-import { Dateline } from './Dateline'
 import { EditionToggle } from './EditionToggle'
+import { LastUpdated } from './LastUpdated'
 import { NavLinks, type NavItem } from './NavLinks'
+import { SideNav, type SideNavGroup } from './SideNav'
 import './masthead.css'
 
 const Wordmark = ({ as: Tag = 'span' }: { as?: 'h1' | 'span' }) => (
@@ -48,20 +50,48 @@ async function Wire() {
  * one. Navigation comes from Sections ("Show in nav") plus Site Settings extras.
  */
 export async function Masthead({ variant }: { variant: 'front' | 'compact' }) {
-  const [settings, sections] = await Promise.all([getSiteSettings(), getSections()])
+  const [settings, sections, categories, lastUpdated] = await Promise.all([
+    getSiteSettings(),
+    getSections(),
+    getAllCategories(),
+    getLastUpdated(),
+  ])
+
+  // Side drawer: every desk with its categories and sub-categories, straight from the CMS.
+  const groups: SideNavGroup[] = sections.map((s) => {
+    const tops = categories.filter((c) => idOf(c.section) === s.id && !c.parent)
+    return {
+      label: s.name,
+      href: `/${s.slug}`,
+      children: tops.map((c) => ({
+        label: c.name,
+        href: `/${s.slug}/${c.slug}`,
+        children: categories
+          .filter((sub) => idOf(sub.parent) === c.id)
+          .map((sub) => ({ label: sub.name, href: `/${s.slug}/${c.slug}/${sub.slug}` })),
+      })),
+    }
+  })
+  const extras = (settings.navExtras ?? []).map((x) => ({ label: x.label, href: x.url }))
 
   const nav: NavItem[] = [
     { label: 'Front Page', href: '/' },
     ...sections.filter((s) => s.showInNav).map((s) => ({ label: s.name, href: `/${s.slug}` })),
-    ...(settings.navExtras ?? []).map((x) => ({ label: x.label, href: x.url })),
+    ...extras,
   ]
 
   return (
     <header className={`masthead masthead--${variant}`}>
       <div className="wrap">
         <div className="masthead__top">
-          <Dateline launchDate={settings.launchDate} />
-          <EditionToggle />
+          <div className="masthead__top-left">
+            <SideNav groups={groups} extras={extras} />
+          </div>
+          <LastUpdated iso={lastUpdated} />
+          {/* Right group: edition stamp now; sign-in and search slot in here later. */}
+          <div className="masthead__top-right">
+            <EditionToggle />
+          </div>
         </div>
 
         {variant === 'front' ? (

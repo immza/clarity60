@@ -10,13 +10,6 @@ export const SiteSettings: GlobalConfig = {
   fields: [
     { name: 'tagline', type: 'text', required: true, defaultValue: 'The world, explained.' },
     {
-      name: 'launchDate',
-      type: 'date',
-      required: true,
-      defaultValue: '2026-11-01T00:00:00.000Z',
-      admin: { description: 'First edition. Sets "Vol. · No." in the masthead (No. = days since launch).' },
-    },
-    {
       name: 'inFeedAdEvery',
       type: 'number',
       required: true,
