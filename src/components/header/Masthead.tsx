@@ -1,6 +1,14 @@
 import Link from 'next/link'
 
-import { getAllCategories, getLastUpdated, getSections, getSiteSettings, getWireHeadlines } from '@/lib/data'
+import {
+  getAllCategories,
+  getLastUpdated,
+  getSections,
+  getSiteSettings,
+  getStoriesTodayCount,
+  getWireHeadlines,
+} from '@/lib/data'
+import type { SiteSetting } from '@/payload-types'
 import { idOf } from '@/lib/relations'
 
 import { EditionToggle } from './EditionToggle'
@@ -15,6 +23,37 @@ const Wordmark = ({ as: Tag = 'span' }: { as?: 'h1' | 'span' }) => (
     <span className="wordmark__60">60</span>
   </Tag>
 )
+
+type Ear = NonNullable<SiteSetting['leftEar']>
+
+/** A masthead ear, configured in Site Settings. Live counts fall back to the text when zero. */
+async function MastheadEar({ ear, side }: { ear: Ear | null | undefined; side: 'left' | 'right' }) {
+  if (!ear?.enabled) return <div className={`masthead__ear masthead__ear--${side} masthead__ear--empty`} aria-hidden="true" />
+
+  let text = ear.text ?? ''
+  if (ear.kind === 'storiesToday') {
+    const count = await getStoriesTodayCount()
+    if (count > 0) text = `${count} new ${count === 1 ? 'story' : 'stories'} in the last 24 hours.`
+  }
+  const content = (
+    <>
+      {ear.label && <span className="label">{ear.label}</span>}
+      {text && <span>{text}</span>}
+    </>
+  )
+  const className = `masthead__ear masthead__ear--${side}`
+  if (!ear.link) return <div className={className}>{content}</div>
+  const external = /^https?:\/\//.test(ear.link)
+  return external ? (
+    <a className={className} href={ear.link} target="_blank" rel="noopener">
+      {content}
+    </a>
+  ) : (
+    <Link className={className} href={ear.link} prefetch={false}>
+      {content}
+    </Link>
+  )
+}
 
 async function Wire() {
   const items = await getWireHeadlines()
@@ -96,17 +135,11 @@ export async function Masthead({ variant }: { variant: 'front' | 'compact' }) {
 
         {variant === 'front' ? (
           <div className="masthead__banner">
-            <div className="masthead__ear masthead__ear--left" aria-hidden="true">
-              <span className="label">Late City</span>
-              <span>Every story, explained in plain English.</span>
-            </div>
+            <MastheadEar ear={settings.leftEar} side="left" />
             <Link href="/" className="masthead__home" aria-label="Clarity60, front page">
               <Wordmark as="h1" />
             </Link>
-            <div className="masthead__ear masthead__ear--right" aria-hidden="true">
-              <span className="label">Price</span>
-              <span>Free. Always.</span>
-            </div>
+            <MastheadEar ear={settings.rightEar} side="right" />
             <p className="masthead__tagline">{settings.tagline}</p>
           </div>
         ) : (

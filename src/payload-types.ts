@@ -1134,6 +1134,38 @@ export interface SiteSetting {
    * Show an in-feed ad after every N stories.
    */
   inFeedAdEvery: number;
+  leftEar: {
+    enabled?: boolean | null;
+    kind: 'custom' | 'storiesToday';
+    /**
+     * Small heading, e.g. "Follow @theclarity60"
+     */
+    label?: string | null;
+    /**
+     * Custom text, or the fallback when the live count is zero.
+     */
+    text?: string | null;
+    /**
+     * Optional. Makes the whole box a link.
+     */
+    link?: string | null;
+  };
+  rightEar: {
+    enabled?: boolean | null;
+    kind: 'custom' | 'storiesToday';
+    /**
+     * Small heading, e.g. "Follow @theclarity60"
+     */
+    label?: string | null;
+    /**
+     * Custom text, or the fallback when the live count is zero.
+     */
+    text?: string | null;
+    /**
+     * Optional. Makes the whole box a link.
+     */
+    link?: string | null;
+  };
   /**
    * Sections marked "Show in nav" appear automatically. Add anything else here (e.g. Puzzles, The Newsreel).
    */
@@ -1160,6 +1192,24 @@ export interface SiteSetting {
 export interface SiteSettingsSelect<T extends boolean = true> {
   tagline?: T;
   inFeedAdEvery?: T;
+  leftEar?:
+    | T
+    | {
+        enabled?: T;
+        kind?: T;
+        label?: T;
+        text?: T;
+        link?: T;
+      };
+  rightEar?:
+    | T
+    | {
+        enabled?: T;
+        kind?: T;
+        label?: T;
+        text?: T;
+        link?: T;
+      };
   navExtras?:
     | T
     | {

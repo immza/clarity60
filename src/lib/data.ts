@@ -351,3 +351,19 @@ export const getLastUpdated = unstable_cache(
   ['last-updated'],
   { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
 )
+
+/** Stories published in the last 24 hours (the "Today" masthead ear). */
+export const getStoriesTodayCount = unstable_cache(
+  async () => {
+    const since = new Date(Date.now() - 24 * 3_600_000).toISOString()
+    const { totalDocs } = await (await payload()).count({
+      collection: 'articles',
+      where: { publishedAt: { greater_than: since } },
+      overrideAccess: false,
+    })
+    return totalDocs
+  },
+  ['stories-today'],
+  // Time-based as well as tag-based: the 24h window moves even when nothing is published.
+  { tags: [TAGS.articles], revalidate: 900 },
+)

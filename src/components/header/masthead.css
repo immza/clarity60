@@ -273,6 +273,16 @@
     font-style: normal;
     color: var(--ink);
   }
+  a.masthead__ear {
+    text-decoration: none;
+  }
+  a.masthead__ear:hover {
+    background: var(--paper-2);
+    color: var(--ink-2);
+  }
+  .masthead__ear--empty {
+    visibility: hidden;
+  }
   .masthead__ear--left {
     justify-self: start;
     text-align: left;
