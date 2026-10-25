@@ -367,3 +367,27 @@ export const getStoriesTodayCount = unstable_cache(
   // Time-based as well as tag-based: the 24h window moves even when nothing is published.
   { tags: [TAGS.articles], revalidate: 900 },
 )
+
+/** All currently active house promotions; filtered per slot/section/category by the caller. */
+export const getActivePromotions = unstable_cache(
+  async () => {
+    const now = new Date().toISOString()
+    const { docs } = await (await payload()).find({
+      collection: 'promotions',
+      where: {
+        and: [
+          { active: { equals: true } },
+          { or: [{ startsAt: { exists: false } }, { startsAt: { less_than_equal: now } }] },
+          { or: [{ endsAt: { exists: false } }, { endsAt: { greater_than: now } }] },
+        ],
+      },
+      depth: 1,
+      limit: 100,
+      overrideAccess: false,
+    })
+    return docs
+  },
+  ['active-promotions'],
+  // Also time-based so scheduled promos start and stop without a publish.
+  { tags: [TAGS.settings], revalidate: 600 },
+)

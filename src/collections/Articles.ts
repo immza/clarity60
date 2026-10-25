@@ -5,7 +5,7 @@ import { editorsOnly, isEditorOrAbove, isStaff, publishedOrStaff, roleOf, staffO
 import { slugField } from '@/fields/slug'
 import { buildArticlePath, upsertArticleRedirect } from '@/lib/articlePath'
 import { idOf } from '@/lib/relations'
-import { columnInchesFor, countWords, readingMinutesFor } from '@/lib/text'
+import { columnInchesFor, countWords, hasAffiliateContent, readingMinutesFor } from '@/lib/text'
 
 export const Articles: CollectionConfig = {
   slug: 'articles',
@@ -59,6 +59,7 @@ export const Articles: CollectionConfig = {
         data.wordCount = words
         data.columnInches = columnInchesFor(words)
         data.readingMinutes = readingMinutesFor(words)
+        data.hasAffiliateLinks = hasAffiliateContent(data.body ?? originalDoc?.body)
 
         if (data._status === 'published' && !data.publishedAt && !originalDoc?.publishedAt) {
           data.publishedAt = new Date().toISOString()
@@ -223,6 +224,16 @@ export const Articles: CollectionConfig = {
       index: true,
       admin: { position: 'sidebar', date: { pickerAppearance: 'dayAndTime' }, description: 'Set automatically on first publish.' },
     },
+    {
+      name: 'sponsorship',
+      type: 'group',
+      admin: { position: 'sidebar', description: 'Paid content: labelled, links marked sponsored, kept out of Google News.' },
+      fields: [
+        { name: 'isSponsored', type: 'checkbox', label: 'Sponsored article' },
+        { name: 'sponsorName', type: 'text', admin: { condition: (_, s) => Boolean(s?.isSponsored) } },
+        { name: 'sponsorUrl', type: 'text', admin: { condition: (_, s) => Boolean(s?.isSponsored) } },
+      ],
+    },
     { name: 'featured', type: 'checkbox', admin: { position: 'sidebar', description: 'Lead story / The Long Read slot.' } },
     { name: 'topStory', type: 'checkbox', admin: { position: 'sidebar', description: 'Top story on its section page.' } },
     {
@@ -235,6 +246,11 @@ export const Articles: CollectionConfig = {
         { name: 'wordCount', type: 'number', admin: { readOnly: true } },
         { name: 'columnInches', type: 'number', admin: { readOnly: true } },
         { name: 'readingMinutes', type: 'number', admin: { readOnly: true } },
+        {
+          name: 'hasAffiliateLinks',
+          type: 'checkbox',
+          admin: { readOnly: true, description: 'Set automatically; shows the commission disclosure.' },
+        },
         { name: 'createdBy', type: 'relationship', relationTo: 'users', admin: { readOnly: true }, access: { update: () => false } },
       ],
     },

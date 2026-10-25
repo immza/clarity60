@@ -12,7 +12,7 @@ export const AD_SIZES = [
 
 export const AdSlots: CollectionConfig = {
   slug: 'ad-slots',
-  admin: { useAsTitle: 'label', defaultColumns: ['label', 'key', 'mode', 'size'], group: 'Admin' },
+  admin: { useAsTitle: 'label', defaultColumns: ['label', 'key', 'mode', 'size'], group: 'Revenue' },
   access: { read: anyone, create: superAdminOnly, update: superAdminOnly, delete: superAdminOnly },
   custom: { totp: { disableAccessWrapper: { read: true } } },
   fields: [
@@ -31,9 +31,11 @@ export const AdSlots: CollectionConfig = {
       defaultValue: 'off',
       options: [
         { label: 'Off (space collapses)', value: 'off' },
-        { label: 'Google AdSense', value: 'adsense' },
-        { label: 'Direct (our own vintage ad)', value: 'direct' },
+        { label: 'House promotions (from Revenue → Promotions)', value: 'house' },
+        { label: 'Google AdSense (falls back to house promotions until approved)', value: 'adsense' },
+        { label: 'Direct-sold ad (falls back to house promotions outside its dates)', value: 'direct' },
       ],
+      admin: { description: 'At most three ads show on an article page, whatever is switched on.' },
     },
     { name: 'size', type: 'select', required: true, options: [...AD_SIZES] },
     {
@@ -48,6 +50,18 @@ export const AdSlots: CollectionConfig = {
       admin: { condition: (_, s) => s?.mode === 'direct' },
     },
     { name: 'link', type: 'text', admin: { condition: (_, s) => s?.mode === 'direct' } },
+    {
+      name: 'directStartsAt',
+      label: 'Starts',
+      type: 'date',
+      admin: { condition: (_, s) => s?.mode === 'direct', date: { pickerAppearance: 'dayAndTime' } },
+    },
+    {
+      name: 'directEndsAt',
+      label: 'Ends',
+      type: 'date',
+      admin: { condition: (_, s) => s?.mode === 'direct', date: { pickerAppearance: 'dayAndTime' } },
+    },
     {
       name: 'sponsor',
       type: 'text',

@@ -388,3 +388,98 @@
   margin: 0;
   font: inherit;
 }
+
+/* Recommended product (affiliate) card */
+.product {
+  display: flex;
+  gap: 16px;
+  margin: 1.8em 0;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+}
+
+.product__image {
+  flex: none;
+  width: 96px;
+  aspect-ratio: 1;
+}
+
+.product p {
+  margin: 0;
+}
+
+.product__label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.product__title {
+  margin: 2px 0 4px !important;
+  font-family: var(--font-headline);
+  font-weight: 900;
+  font-size: 1.125rem;
+  line-height: 1.25;
+}
+
+.product__reason {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.prose .product__cta {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 7px 12px;
+  background: var(--inverse-bg);
+  color: var(--inverse-ink);
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.prose .product__cta:hover {
+  color: var(--inverse-ink);
+  background: var(--accent-ink);
+}
+
+/* Disclosures: plain, small, honest */
+.article__disclosure {
+  margin: 12px 0 0;
+  font-size: 0.8125rem;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+.article__sponsor {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 3px 8px 2px;
+  border: 1px solid var(--rule);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The sidebar slot is desktop-only: on phones it would stack under the end-of-article slot. */
+.article-layout__sticky {
+  display: none;
+}
+
+/* Desktop: the sidebar ad stays in view while reading. */
+@media (min-width: 1000px) {
+  .article-layout__sticky {
+    display: block;
+  }
+  .article-layout__sticky {
+    position: sticky;
+    top: 64px;
+  }
+}

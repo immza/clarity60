@@ -34,12 +34,13 @@ const AD_SLOTS = [
   ['Article sidebar', 'article-sidebar', '300x250'],
   ['Article in-body', 'article-in-body', 'in-feed'],
   ['Section in-feed', 'section-in-feed', 'in-feed'],
+  ['Article end', 'article-end', 'in-feed'],
 ] as const
 
 const payload = await getPayload({ config })
 
 const ensure = async <T extends Record<string, unknown>>(
-  collection: 'sections' | 'categories' | 'authors' | 'ad-slots',
+  collection: 'sections' | 'categories' | 'authors' | 'ad-slots' | 'promotions',
   where: Record<string, { equals: unknown }>,
   data: T,
 ) => {
@@ -94,6 +95,26 @@ await ensure('authors', { slug: { equals: 'clarity60-desk' } }, {
 for (const [label, key, size] of AD_SLOTS) {
   await ensure('ad-slots', { key: { equals: key } }, { label, key, size, mode: 'off' })
 }
+
+// Starter house promotions. They only appear in slots switched to a mode other than "off".
+await ensure('promotions', { title: { equals: 'Instagram follow' } }, {
+  title: 'Instagram follow',
+  label: 'From Clarity60',
+  headline: 'The 60-second version, on Instagram',
+  text: 'Every big story, explained in a minute. Follow @theclarity60.',
+  ctaLabel: 'Follow',
+  link: 'https://www.instagram.com/theclarity60/',
+  weight: 2,
+})
+await ensure('promotions', { title: { equals: 'Advertise with us' } }, {
+  title: 'Advertise with us',
+  label: 'From Clarity60',
+  headline: 'Put your brand in the paper',
+  text: 'Vintage-style placements for modern brands, seen by curious readers.',
+  ctaLabel: 'Ask for the media kit',
+  link: '/advertise',
+  weight: 1,
+})
 
 payload.logger.info('seed: done')
 process.exit(0)

@@ -7,7 +7,7 @@ import { queuePathRefresh } from '@/hooks/queuePathRefresh'
 import { trackPreviousSlug } from '@/lib/articlePath'
 
 /** URLs the site itself uses; a section can't take them. */
-const RESERVED_SLUGS = ['admin', 'api', 'tag', 'tags', 'author', 'authors', 'search', 'media', 'sitemap', 'rss', 'feed', 'about', 'contact', 'privacy', 'cookies', 'terms', 'advertise', 'account', 'login', 'saved', 'latest']
+const RESERVED_SLUGS = ['admin', 'api', 'tag', 'tags', 'author', 'authors', 'search', 'media', 'sitemap', 'rss', 'feed', 'about', 'contact', 'privacy', 'cookies', 'terms', 'advertise', 'account', 'login', 'saved', 'latest', 'go']
 
 /**
  * Top-level desks such as World News and Explainers. New desks (Business, Sport...)

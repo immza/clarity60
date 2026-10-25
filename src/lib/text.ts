@@ -35,3 +35,23 @@ export const columnInchesFor = (words: number) =>
 
 export const readingMinutesFor = (words: number) =>
   words === 0 ? 0 : Math.max(1, Math.ceil(words / WORDS_PER_MINUTE))
+
+type RichNode = {
+  type?: string
+  fields?: { sponsored?: boolean; linkType?: string; doc?: { relationTo?: string } | null; blockType?: string }
+  children?: RichNode[]
+}
+
+/** True when the body links to an affiliate link, has a sponsored link, or a "Recommended" block. */
+export const hasAffiliateContent = (richText: unknown): boolean => {
+  const root = (richText as { root?: RichNode } | null)?.root
+  if (!root) return false
+  const walk = (node: RichNode): boolean => {
+    const f = node.fields
+    if (f?.sponsored) return true
+    if (f?.linkType === 'internal' && f.doc?.relationTo === 'affiliate-links') return true
+    if (node.type === 'block' && f?.blockType === 'product') return true
+    return node.children?.some(walk) ?? false
+  }
+  return walk(root)
+}

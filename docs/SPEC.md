@@ -147,6 +147,26 @@ Sections, categories, sub-categories and navigation are all edited in the admin;
 - **IndexNow** ping on every publish.
 - Semantic HTML, a breadcrumb on every article, and visible author bylines with dates (E-E-A-T).
 
+## 7b. Revenue (ads, affiliates, promotions, sponsored)
+
+- **Restraint rules:** at most 3 ad spots per article (in-body after the 3rd paragraph on longer pieces,
+  end of article, desktop-only sticky sidebar); never in the masthead, nav or above the headline.
+  Every slot is off by default.
+- **Ad Slots** (Revenue → Ad Slots), each with a mode:
+  - off
+  - house promotions
+  - AdSense, falling back to house promotions until approved
+  - direct-sold ad with start/end dates, falling back to house promotions
+- **Promotions:** quiet "From Clarity60" notices, with scheduling, weight, and targeting by slot, section and
+  category. None appears twice on a page.
+- **Affiliate Links:** a partner URL library. Articles link through `/go/{slug}`, which counts clicks, sets
+  `noindex`, and marks links `rel="sponsored"`. The "Recommended product" block is available in the editor.
+  An automatic commission disclosure appears on any article with affiliate content.
+- **Sponsored articles:**
+  - a "Sponsored · Paid partnership with X" label, and all outbound links marked sponsored
+  - `AdvertiserContentArticle` schema
+  - excluded from the Google News sitemap
+
 ## 8. Quality, security, observability
 
 - **Hard CI gates:** build, typecheck, lint, secret scan.

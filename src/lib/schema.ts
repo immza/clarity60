@@ -63,7 +63,12 @@ export const articleSchema = (article: Article) => {
 
   return {
     '@context': 'https://schema.org',
-    '@type': section?.kind === 'news' ? 'NewsArticle' : 'Article',
+    // Paid content is declared as such, never as journalism.
+    '@type': article.sponsorship?.isSponsored
+      ? 'AdvertiserContentArticle'
+      : section?.kind === 'news'
+        ? 'NewsArticle'
+        : 'Article',
     '@id': `${url}#article`,
     headline: article.title.slice(0, 110),
     description: article.meta?.description || article.summary,

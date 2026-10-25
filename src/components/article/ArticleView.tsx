@@ -90,6 +90,9 @@ export async function ArticleView({ article }: { article: Article }) {
     listArticles({ categoryIds: [category.id], excludeIds: [article.id], limit: 4 }),
   ])
 
+  const sponsor = article.sponsorship?.isSponsored ? article.sponsorship : null
+  const slotContext = { sectionId: section.id, categoryIds: [category.id, ...(parent ? [parent.id] : [])] }
+
   const published = article.publishedAt ?? article.createdAt
   const wasUpdated = new Date(article.updatedAt).getTime() - new Date(published).getTime() > 10 * 60_000
 
@@ -113,6 +116,23 @@ export async function ArticleView({ article }: { article: Article }) {
           </nav>
 
           <header className="article__header">
+            {sponsor && (
+              <p className="article__sponsor">
+                Sponsored
+                {sponsor.sponsorName && (
+                  <>
+                    {' · Paid partnership with '}
+                    {sponsor.sponsorUrl ? (
+                      <a href={sponsor.sponsorUrl} rel="sponsored noopener" target="_blank">
+                        {sponsor.sponsorName}
+                      </a>
+                    ) : (
+                      sponsor.sponsorName
+                    )}
+                  </>
+                )}
+              </p>
+            )}
             <p className="kicker">
               {updates.length > 0 && <span className="article__live">Developing · </span>}
               {category.name}
@@ -137,6 +157,12 @@ export async function ArticleView({ article }: { article: Article }) {
                 </span>
               ) : null}
             </div>
+            {article.hasAffiliateLinks && (
+              <p className="article__disclosure">
+                This article contains affiliate links. If you buy through them we may earn a commission, at no extra
+                cost to you. It never affects what we recommend.
+              </p>
+            )}
           </header>
 
           {hero && <Hero media={hero} />}
@@ -159,7 +185,13 @@ export async function ArticleView({ article }: { article: Article }) {
             </section>
           )}
 
-          <RichText data={article.body} className="prose" />
+          <RichText
+            data={article.body}
+            className="prose"
+            sponsored={Boolean(sponsor)}
+            // One ad inside the story, only in longer pieces, after the third paragraph.
+            insert={{ after: 3, minBlocks: 7, node: <AdSlot slotKey="article-in-body" context={slotContext} /> }}
+          />
 
           {article.sources && article.sources.length > 0 && (
             <section className="article__sources" aria-label="Sources">
@@ -196,6 +228,8 @@ export async function ArticleView({ article }: { article: Article }) {
             </aside>
           )}
 
+          <AdSlot slotKey="article-end" context={slotContext} />
+
           {corrections.length > 0 && (
             <section className="article__corrections" aria-labelledby="corrections-title">
               <h2 id="corrections-title">Corrections</h2>
@@ -221,7 +255,6 @@ export async function ArticleView({ article }: { article: Article }) {
         </article>
 
         <aside className="article-layout__side" aria-label="More stories">
-          <AdSlot slotKey="article-sidebar" />
           {more.docs.length > 0 && (
             <section>
               <h2 className="side-title">More in {category.name}</h2>
@@ -230,6 +263,9 @@ export async function ArticleView({ article }: { article: Article }) {
               ))}
             </section>
           )}
+          <div className="article-layout__sticky">
+            <AdSlot slotKey="article-sidebar" context={slotContext} />
+          </div>
         </aside>
       </main>
     </>

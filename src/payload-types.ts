@@ -76,6 +76,8 @@ export interface Config {
     pages: Page;
     corrections: Correction;
     'ad-slots': AdSlot;
+    promotions: Promotion;
+    'affiliate-links': AffiliateLink;
     users: User;
     'audit-log': AuditLog;
     redirects: Redirect;
@@ -97,6 +99,8 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     corrections: CorrectionsSelect<false> | CorrectionsSelect<true>;
     'ad-slots': AdSlotsSelect<false> | AdSlotsSelect<true>;
+    promotions: PromotionsSelect<false> | PromotionsSelect<true>;
+    'affiliate-links': AffiliateLinksSelect<false> | AffiliateLinksSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'audit-log': AuditLogSelect<false> | AuditLogSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
@@ -237,6 +241,14 @@ export interface Article {
    */
   publishedAt?: string | null;
   /**
+   * Paid content: labelled, links marked sponsored, kept out of Google News.
+   */
+  sponsorship?: {
+    isSponsored?: boolean | null;
+    sponsorName?: string | null;
+    sponsorUrl?: string | null;
+  };
+  /**
    * Lead story / The Long Read slot.
    */
   featured?: boolean | null;
@@ -252,6 +264,10 @@ export interface Article {
   wordCount?: number | null;
   columnInches?: number | null;
   readingMinutes?: number | null;
+  /**
+   * Set automatically; shows the commission disclosure.
+   */
+  hasAffiliateLinks?: boolean | null;
   createdBy?: (number | null) | User;
   meta?: {
     title?: string | null;
@@ -436,7 +452,6 @@ export interface User {
    */
   author?: (number | null) | Author;
   totpSecret?: string | null;
-  hasTotp?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -518,7 +533,10 @@ export interface AdSlot {
    * Placement id used by the site, e.g. "home-sidebar". Do not change once live.
    */
   key: string;
-  mode: 'off' | 'adsense' | 'direct';
+  /**
+   * At most three ads show on an article page, whatever is switched on.
+   */
+  mode: 'off' | 'house' | 'adsense' | 'direct';
   size: '300x250' | '728x90' | 'in-feed' | '320x100';
   /**
    * The data-ad-slot value from AdSense.
@@ -526,10 +544,90 @@ export interface AdSlot {
   adsenseSlotId?: string | null;
   creative?: (number | null) | Media;
   link?: string | null;
+  directStartsAt?: string | null;
+  directEndsAt?: string | null;
   /**
    * Advertiser name, used for the "Advertisement" label and rel="sponsored".
    */
   sponsor?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Shown in ad slots set to "House promotions", and as the fallback for other modes.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions".
+ */
+export interface Promotion {
+  id: number;
+  /**
+   * Internal name.
+   */
+  title: string;
+  /**
+   * Small line above the headline. Use "Partner" or "Sponsored" if someone paid.
+   */
+  label?: string | null;
+  headline: string;
+  text?: string | null;
+  ctaLabel?: string | null;
+  link: string;
+  /**
+   * Optional small image.
+   */
+  image?: (number | null) | Media;
+  active?: boolean | null;
+  /**
+   * Leave empty to allow every slot.
+   */
+  slots?: (number | AdSlot)[] | null;
+  /**
+   * Leave empty for every section.
+   */
+  sections?: (number | Section)[] | null;
+  /**
+   * Leave empty for every category.
+   */
+  categories?: (number | Category)[] | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  /**
+   * When several promos match, higher weight shows more often.
+   */
+  weight?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Link to these from articles (Link → Internal → Affiliate Links) or use the "Recommended" block.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "affiliate-links".
+ */
+export interface AffiliateLink {
+  id: number;
+  /**
+   * e.g. "Celestron 70mm telescope"
+   */
+  name: string;
+  /**
+   * Used in clarity60.com/go/{slug}.
+   */
+  slug: string;
+  /**
+   * e.g. Amazon Associates, Booking.com
+   */
+  partner?: string | null;
+  /**
+   * The full partner URL with your tracking ID.
+   */
+  url: string;
+  /**
+   * Internal only: commission rate, expiry, contact.
+   */
+  notes?: string | null;
+  clicks?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -733,6 +831,14 @@ export interface PayloadLockedDocument {
         value: number | AdSlot;
       } | null)
     | ({
+        relationTo: 'promotions';
+        value: number | Promotion;
+      } | null)
+    | ({
+        relationTo: 'affiliate-links';
+        value: number | AffiliateLink;
+      } | null)
+    | ({
         relationTo: 'users';
         value: number | User;
       } | null)
@@ -824,6 +930,13 @@ export interface ArticlesSelect<T extends boolean = true> {
   bylineOverride?: T;
   editorialStatus?: T;
   publishedAt?: T;
+  sponsorship?:
+    | T
+    | {
+        isSponsored?: T;
+        sponsorName?: T;
+        sponsorUrl?: T;
+      };
   featured?: T;
   topStory?: T;
   path?: T;
@@ -831,6 +944,7 @@ export interface ArticlesSelect<T extends boolean = true> {
   wordCount?: T;
   columnInches?: T;
   readingMinutes?: T;
+  hasAffiliateLinks?: T;
   createdBy?: T;
   meta?:
     | T
@@ -983,7 +1097,45 @@ export interface AdSlotsSelect<T extends boolean = true> {
   adsenseSlotId?: T;
   creative?: T;
   link?: T;
+  directStartsAt?: T;
+  directEndsAt?: T;
   sponsor?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions_select".
+ */
+export interface PromotionsSelect<T extends boolean = true> {
+  title?: T;
+  label?: T;
+  headline?: T;
+  text?: T;
+  ctaLabel?: T;
+  link?: T;
+  image?: T;
+  active?: T;
+  slots?: T;
+  sections?: T;
+  categories?: T;
+  startsAt?: T;
+  endsAt?: T;
+  weight?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "affiliate-links_select".
+ */
+export interface AffiliateLinksSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  partner?: T;
+  url?: T;
+  notes?: T;
+  clicks?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -996,7 +1148,6 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   author?: T;
   totpSecret?: T;
-  hasTotp?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -1273,6 +1424,26 @@ export interface TaskSchedulePublish {
     } | null;
   };
   output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ProductBlock".
+ */
+export interface ProductBlock {
+  /**
+   * Create it first under Revenue → Affiliate Links.
+   */
+  affiliateLink: number | AffiliateLink;
+  title: string;
+  /**
+   * One honest line on why it is worth it.
+   */
+  reason?: string | null;
+  image?: (number | null) | Media;
+  ctaLabel?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'product';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -1,7 +1,6 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { redirectsPlugin } from '@payloadcms/plugin-redirects'
 import { seoPlugin } from '@payloadcms/plugin-seo'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import type { CollectionConfig } from 'payload'
 import { buildConfig } from 'payload'
@@ -11,6 +10,7 @@ import { fileURLToPath } from 'url'
 
 import { editorsOnly, isEditorOrAbove } from './access/roles'
 import { AdSlots } from './collections/AdSlots'
+import { AffiliateLinks } from './collections/AffiliateLinks'
 import { Articles } from './collections/Articles'
 import { AuditLog } from './collections/AuditLog'
 import { Authors } from './collections/Authors'
@@ -18,9 +18,11 @@ import { Categories } from './collections/Categories'
 import { Corrections } from './collections/Corrections'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
+import { Promotions } from './collections/Promotions'
 import { Sections } from './collections/Sections'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
+import { editor } from './editor'
 import { SiteSettings } from './globals/SiteSettings'
 import { auditAfterChange, auditAfterDelete } from './hooks/auditLog'
 import { revalidateAfterChange, revalidateAfterDelete, revalidateGlobal } from './hooks/revalidate'
@@ -42,6 +44,7 @@ const CACHE_TAGS: Partial<Record<string, string[]>> = {
   media: [TAGS.articles],
   corrections: [TAGS.articles],
   'ad-slots': [TAGS.settings],
+  promotions: [TAGS.settings],
   pages: [TAGS.pages],
   tags: [TAGS.articles],
 }
@@ -79,11 +82,11 @@ export default buildConfig({
     // Kept out of the public repo's defaults; set PAYLOAD_ADMIN_ROUTE in production.
     admin: (process.env.PAYLOAD_ADMIN_ROUTE as `/${string}` | undefined) || '/admin',
   },
-  collections: [Articles, Sections, Categories, Tags, Authors, Media, Pages, Corrections, AdSlots, Users, AuditLog].map(
+  collections: [Articles, Sections, Categories, Tags, Authors, Media, Pages, Corrections, AdSlots, Promotions, AffiliateLinks, Users, AuditLog].map(
     withHooks,
   ),
   globals: [{ ...SiteSettings, hooks: { afterChange: [revalidateGlobal(TAGS.settings)] } }],
-  editor: lexicalEditor(),
+  editor,
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
