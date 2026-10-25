@@ -5,6 +5,9 @@ Each milestone ends in something deployable. Tasks marked **[YOU]** need your ac
 
 ---
 
+> **Launch scope (agreed 2026-10-22):** launch on a shorter list. Search, Most Read and the Developing timeline UI
+> move to the week after launch, so Milestones 3–4 ship the core pages first.
+
 ## Milestone 0: Accounts and foundations (day 1)
 
 ### [YOU] Create or prepare these accounts

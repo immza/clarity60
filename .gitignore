@@ -51,3 +51,6 @@ node_modules/
 
 # local database
 .localdb
+
+# uploaded media (local dev)
+/media

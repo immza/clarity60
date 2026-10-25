@@ -163,7 +163,7 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 
 ## 10. Assumptions
 
-1. Column inches and reading time are computed from word count.
+1. Column inches and reading time are computed from word count: 1 column inch per 150 words, 230 words per minute.
 2. Comment depth is unlimited in data; the visual indent is capped at level 4.
 3. Slugs are unique per section.
 4. Each article has one primary category, plus tags.
