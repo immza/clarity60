@@ -436,6 +436,7 @@ export interface User {
    */
   author?: (number | null) | Author;
   totpSecret?: string | null;
+  hasTotp?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -995,6 +996,7 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   author?: T;
   totpSecret?: T;
+  hasTotp?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -1131,6 +1133,10 @@ export interface SiteSetting {
   id: number;
   tagline: string;
   /**
+   * First edition. Sets "Vol. · No." in the masthead (No. = days since launch).
+   */
+  launchDate: string;
+  /**
    * Show an in-feed ad after every N stories.
    */
   inFeedAdEvery: number;
@@ -1159,6 +1165,7 @@ export interface SiteSetting {
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
   tagline?: T;
+  launchDate?: T;
   inFeedAdEvery?: T;
   navExtras?:
     | T

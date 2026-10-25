@@ -23,7 +23,9 @@ import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
 import { SiteSettings } from './globals/SiteSettings'
 import { auditAfterChange, auditAfterDelete } from './hooks/auditLog'
+import { revalidateAfterChange, revalidateAfterDelete, revalidateGlobal } from './hooks/revalidate'
 import { refreshArticlePaths } from './jobs/refreshArticlePaths'
+import { TAGS } from './lib/cacheTags'
 import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
@@ -31,18 +33,38 @@ const dirname = path.dirname(filename)
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-/** Every collection except the log itself records create/update/publish/delete. */
-const withAudit = (collection: CollectionConfig): CollectionConfig =>
-  collection.slug === 'audit-log'
-    ? collection
-    : {
-        ...collection,
-        hooks: {
-          ...collection.hooks,
-          afterChange: [...(collection.hooks?.afterChange ?? []), auditAfterChange],
-          afterDelete: [...(collection.hooks?.afterDelete ?? []), auditAfterDelete],
-        },
-      }
+/** Public cache tags each collection's changes should clear. */
+const CACHE_TAGS: Partial<Record<string, string[]>> = {
+  articles: [TAGS.articles],
+  sections: [TAGS.sections, TAGS.articles],
+  categories: [TAGS.categories, TAGS.articles],
+  authors: [TAGS.articles],
+  media: [TAGS.articles],
+  corrections: [TAGS.articles],
+  'ad-slots': [TAGS.settings],
+}
+
+/** Adds audit logging (every collection but the log itself) and public cache clearing. */
+const withHooks = (collection: CollectionConfig): CollectionConfig => {
+  if (collection.slug === 'audit-log') return collection
+  const tags = CACHE_TAGS[collection.slug] ?? []
+  return {
+    ...collection,
+    hooks: {
+      ...collection.hooks,
+      afterChange: [
+        ...(collection.hooks?.afterChange ?? []),
+        auditAfterChange,
+        ...tags.map(revalidateAfterChange),
+      ],
+      afterDelete: [
+        ...(collection.hooks?.afterDelete ?? []),
+        auditAfterDelete,
+        ...tags.map(revalidateAfterDelete),
+      ],
+    },
+  }
+}
 
 export default buildConfig({
   serverURL: siteUrl,
@@ -56,9 +78,9 @@ export default buildConfig({
     admin: (process.env.PAYLOAD_ADMIN_ROUTE as `/${string}` | undefined) || '/admin',
   },
   collections: [Articles, Sections, Categories, Tags, Authors, Media, Pages, Corrections, AdSlots, Users, AuditLog].map(
-    withAudit,
+    withHooks,
   ),
-  globals: [SiteSettings],
+  globals: [{ ...SiteSettings, hooks: { afterChange: [revalidateGlobal(TAGS.settings)] } }],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

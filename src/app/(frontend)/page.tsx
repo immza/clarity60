@@ -1,59 +1,53 @@
-import { headers as getHeaders } from 'next/headers.js'
-import Image from 'next/image'
-import { getPayload } from 'payload'
-import React from 'react'
-import { fileURLToPath } from 'url'
+import Link from 'next/link'
 
-import config from '@/payload.config'
-import './styles.css'
+import { Masthead } from '@/components/header/Masthead'
+import { getSections } from '@/lib/data'
 
-export default async function HomePage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+import './front.css'
 
-  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
+export default async function FrontPage() {
+  const sections = await getSections()
 
   return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
-          />
-        </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Go to admin panel
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Documentation
-          </a>
-        </div>
-      </div>
-      <div className="footer">
-        <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
-          <code>app/(frontend)/page.tsx</code>
-        </a>
-      </div>
-    </div>
+    <>
+      <Masthead variant="front" />
+      <main id="main" className="wrap front">
+        {/* Placeholder until the Front Page modules land in Step 3. */}
+        <section className="front__preview" aria-labelledby="preview-title">
+          <p className="kicker">Design preview · Step 2</p>
+          <h2 id="preview-title" className="front__headline">
+            How a Steel Box Rebuilt the World Economy
+          </h2>
+          <p className="front__dek">
+            In 1956, a trucking man named Malcolm McLean loaded 58 metal boxes onto a ship in New Jersey. Trade was
+            never the same again.
+          </p>
+          <div className="front__figure hatch" role="img" aria-label="Illustration placeholder" />
+          <p className="front__caption">The Ideal X leaves Port Newark, April 1956.</p>
+          <p className="front__body">
+            The real front page arrives in Step 3: The Latest, the lead story, the Latest feed, Most Read and the
+            ad slots, all filled from the CMS. Use the <strong>Morning/Night Edition</strong> stamp above to try
+            both themes, and resize the window to see the phone layout.
+          </p>
+        </section>
+
+        <section aria-labelledby="desks-title" className="front__desks">
+          <h2 id="desks-title" className="front__desks-title">
+            The desks
+          </h2>
+          <ul>
+            {sections.map((s) => (
+              <li key={s.id}>
+                <Link href={`/${s.slug}`} prefetch={false}>
+                  <span className="kicker">{s.kicker || 'Section'}</span>
+                  <strong>{s.name}</strong>
+                  <span>{s.description}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </main>
+    </>
   )
 }
