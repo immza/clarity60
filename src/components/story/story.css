@@ -1,0 +1,244 @@
+.media {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  background: var(--paper-2);
+}
+
+.media img {
+  width: 100%;
+  height: 100%;
+}
+
+.media--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media__label {
+  padding: 4px 8px;
+  background: var(--paper);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.story {
+  position: relative;
+}
+
+.story__media {
+  position: relative;
+  display: block;
+  border: 1px solid var(--ink-3);
+}
+
+.story__badge,
+.story__ig {
+  position: absolute;
+  bottom: 8px;
+  padding: 3px 6px 2px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.story__badge {
+  left: 8px;
+  background: var(--inverse-bg);
+  color: var(--inverse-ink);
+}
+
+.story__ig {
+  right: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.story__badge + .story__ig {
+  right: auto;
+  left: 8px;
+  bottom: 30px;
+}
+
+.story__text .kicker {
+  margin: 0 0 4px;
+}
+
+.story__title {
+  margin: 0 0 6px;
+  font-family: var(--font-headline);
+  font-weight: 900;
+  line-height: 1.12;
+  letter-spacing: -0.005em;
+}
+
+.story__title a {
+  text-decoration: none;
+}
+
+.story__title a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  color: var(--ink);
+}
+
+.story__summary {
+  margin: 0 0 6px;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+
+.story__meta {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* list: thumbnail left */
+.story--list {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.story--list .story__title {
+  font-size: 1.1875rem;
+}
+
+.story--list .story__summary {
+  font-size: 0.9375rem;
+}
+
+.story--list .story__badge,
+.story--list .story__ig {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .story--list {
+    grid-template-columns: 180px 1fr;
+    gap: 20px;
+  }
+  .story--list .story__title {
+    font-size: 1.5rem;
+  }
+  .story--list .story__badge,
+  .story--list .story__ig {
+    display: block;
+  }
+}
+
+/* grid: image on top */
+.story--grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.story--grid .story__text .kicker {
+  display: none;
+}
+
+.story--grid .story__title {
+  font-size: 1.25rem;
+}
+
+.story--grid .story__summary {
+  font-size: 0.9375rem;
+}
+
+/* feature: big image beside headline */
+.story--feature {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.story--feature .story__title {
+  font-size: clamp(1.75rem, 4.5vw, 2.5rem);
+  line-height: 1.05;
+}
+
+@media (min-width: 900px) {
+  .story--feature {
+    grid-template-columns: 1.15fr 1fr;
+    align-items: center;
+    gap: 24px;
+  }
+}
+
+/* lead: headline over image, used for the top story */
+.story--lead {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 14px;
+}
+
+.story--lead .story__media {
+  aspect-ratio: auto;
+}
+
+.story--lead .story__title {
+  font-size: clamp(1.875rem, 5vw, 2.75rem);
+  line-height: 1.04;
+}
+
+.story--lead .story__summary {
+  font-size: 1.0625rem;
+}
+
+@media (min-width: 900px) {
+  .story--lead {
+    flex-direction: column;
+  }
+}
+
+/* Lists and paging */
+.story-list--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px 20px;
+}
+
+.story-list__empty {
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 24px;
+  margin: 28px 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.pager a {
+  padding: 10px 16px;
+  border: 1.5px solid var(--rule);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.pager a:hover {
+  background: var(--inverse-bg);
+  color: var(--inverse-ink);
+}

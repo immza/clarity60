@@ -84,7 +84,7 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 ## 5. Data model (Supabase Postgres; Payload owns the schema via migrations)
 
 ### Articles
-- **Identity:** `type` (news | explainer), `title`, `slug` (unique per section), `summary`.
+- **Identity:** `section` (→ Sections), `title`, `slug` (unique per section), `summary`.
 - **Media and body:** `heroMedia` (image or video), `body` (Lexical rich text).
 - **Classification:** `category` (primary, required), `tags[]`, `authors[]`, `bylineOverride` (e.g. "Clarity60 Desk").
 - **Workflow:** `status` (draft | in_review | scheduled | published), `publishedAt`, `updatedAt`.
@@ -93,8 +93,17 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 - **News only:** `sources[]` (outlet and URL), `developingUpdates[]` (timestamp and text), `relatedExplainer`, `instagramUrl`.
 - **SEO:** `metaTitle`, `metaDescription`, `ogImage`, `canonical`, `noindex`.
 
+### Structure is data, not code
+Sections, categories, sub-categories and navigation are all edited in the admin; adding a desk
+(e.g. Business) or a sub-category needs no code change.
+
+- **Sections:** `name`, `slug` (reserved words blocked), `kind` (news | evergreen → schema type and
+  Google News sitemap), `kicker`, `description`, `showInNav`, `sortOrder`, `previousSlugs`.
+- **Renames are safe:** renaming a section or category, or moving a sub-category, records the old slug,
+  queues a background job that refreshes every affected article URL, and old links 301 to the new ones.
+
 ### Supporting collections
-- **Categories:** `section`, `parent?`, `name`, `slug`, `description`, `seo`.
+- **Categories:** `section` (→ Sections), `parent?`, `name`, `slug`, `description`, `sortOrder`, `previousSlugs`.
 - **Tags:** `name`, `slug`, `description`.
 - **Authors:** schema `Person`. Fields: `name`, `slug`, `bio`, `credentials`, `socials`, `photo`, `staffUser?`.
 - **Media:** `file`, `alt` (required), `credit` (required), `license`.
@@ -102,7 +111,7 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 - **Corrections:** `article`, `text`, `date`.
 - **Pages:** static pages.
 - **AdSlots:** `key`, `mode` (off | adsense | direct), `size`, `adsenseSlotId`, `creative`, `link`.
-- **SiteSettings:** a global holding nav, socials, wire config, and in-feed ad frequency (default every 6 stories).
+- **SiteSettings:** a global holding extra nav links, socials, tagline, and in-feed ad frequency (default every 6 stories).
 - **AuditLog** and **ArticleViewsDaily** (`article`, `date`, `count`).
 
 ### Phase 2 additions
@@ -138,6 +147,26 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 - **IndexNow** ping on every publish.
 - Semantic HTML, a breadcrumb on every article, and visible author bylines with dates (E-E-A-T).
 
+## 7b. Revenue (ads, affiliates, promotions, sponsored)
+
+- **Restraint rules:** at most 3 ad spots per article (in-body after the 3rd paragraph on longer pieces,
+  end of article, desktop-only sticky sidebar); never in the masthead, nav or above the headline.
+  Every slot is off by default.
+- **Ad Slots** (Revenue → Ad Slots), each with a mode:
+  - off
+  - house promotions
+  - AdSense, falling back to house promotions until approved
+  - direct-sold ad with start/end dates, falling back to house promotions
+- **Promotions:** quiet "From Clarity60" notices, with scheduling, weight, and targeting by slot, section and
+  category. None appears twice on a page.
+- **Affiliate Links:** a partner URL library. Articles link through `/go/{slug}`, which counts clicks, sets
+  `noindex`, and marks links `rel="sponsored"`. The "Recommended product" block is available in the editor.
+  An automatic commission disclosure appears on any article with affiliate content.
+- **Sponsored articles:**
+  - a "Sponsored · Paid partnership with X" label, and all outbound links marked sponsored
+  - `AdvertiserContentArticle` schema
+  - excluded from the Google News sitemap
+
 ## 8. Quality, security, observability
 
 - **Hard CI gates:** build, typecheck, lint, secret scan.
@@ -151,7 +180,7 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 - **Security**
   - Headers: CSP, HSTS, frame-ancestors, referrer policy.
   - Cloudflare WAF and rate limits.
-  - Admin route set from an environment variable.
+  - Admin at /admin, protected by mandatory 2FA, login lockout, `noindex`, and Cloudflare rate-limit/WAF rules (a hidden URL is no protection in a public repo).
   - Mandatory staff 2FA and an audit log.
   - Least-privilege API keys and RLS.
 - **Monitoring:** Sentry (errors and performance), GA4, Search Console, Cloudflare analytics, a free uptime monitor.
@@ -163,7 +192,7 @@ Today's Brief, Quickest Reads, AI-generated publishing, other languages, paid su
 
 ## 10. Assumptions
 
-1. Column inches and reading time are computed from word count.
+1. Column inches and reading time are computed from word count: 1 column inch per 150 words, 230 words per minute.
 2. Comment depth is unlimited in data; the visual indent is capped at level 4.
 3. Slugs are unique per section.
 4. Each article has one primary category, plus tags.

@@ -5,6 +5,9 @@ Each milestone ends in something deployable. Tasks marked **[YOU]** need your ac
 
 ---
 
+> **Launch scope (agreed 2026-10-22):** launch on a shorter list. Search, Most Read and the Developing timeline UI
+> move to the week after launch, so Milestones 3–4 ship the core pages first.
+
 ## Milestone 0: Accounts and foundations (day 1)
 
 ### [YOU] Create or prepare these accounts
@@ -128,7 +131,7 @@ Enable 2FA on every account.
 
 ## Phase 2: Readers (about 1–2 weeks after launch)
 
-- **Reader sign-in:** Supabase Auth with Google, Facebook and Apple.
+- **Reader sign-in:** Supabase Auth with Google, Facebook and Apple. The Sign in / account button sits in the masthead's top-right group, beside the edition stamp.
   - **[YOU]** Set up the Meta app review and the Apple Services ID.
 - **ReaderProfiles:** created on first login.
 - **Comments, Reports and Saves:** all reader tables protected by RLS.
@@ -143,6 +146,7 @@ Enable 2FA on every account.
 
 - Newsreel through the Instagram Graph API, via a scheduled job, as a static grid.
 - Newsletter (Sunday Edition), Puzzles and Back Issues.
+- A search button in the masthead's top-right group (search page and Postgres full-text search).
 - Apply for AdSense and switch slot modes on.
 
 ---

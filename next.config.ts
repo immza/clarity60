@@ -14,6 +14,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      // The admin panel must never appear in search results.
+      { source: '/admin/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+      { source: '/admin', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+    ]
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],
