@@ -12,6 +12,15 @@ import './author.css'
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string }> }
 
+/** Hostname for display, or null for a malformed link (older entries were not validated). */
+const hostnameOf = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}
+
 const pageNumber = (raw?: string) => Math.max(1, Math.min(1000, Number.parseInt(raw ?? '1', 10) || 1))
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -61,13 +70,16 @@ export default async function AuthorPage({ params, searchParams }: Props) {
             {author.credentials && <p className="author-head__creds">{author.credentials}</p>}
             {author.socials && author.socials.length > 0 && (
               <ul className="author-head__links">
-                {author.socials.map((s) => (
-                  <li key={s.id ?? s.url}>
-                    <a href={s.url} rel="me noopener" target="_blank">
-                      {new URL(s.url).hostname.replace(/^www\./, '')}
-                    </a>
-                  </li>
-                ))}
+                {author.socials.map((s) => {
+                  const host = hostnameOf(s.url)
+                  return host ? (
+                    <li key={s.id ?? s.url}>
+                      <a href={s.url} rel="me noopener" target="_blank">
+                        {host}
+                      </a>
+                    </li>
+                  ) : null
+                })}
               </ul>
             )}
           </div>

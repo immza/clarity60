@@ -7,7 +7,7 @@ import config from '@/payload.config'
 const headers = {
   // Keep tracking URLs out of search results and do not pass our page URL to partners.
   'X-Robots-Tag': 'noindex, nofollow',
-  'Referrer-Policy': 'no-referrer-when-downgrade',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Cache-Control': 'no-store',
 }
 
@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     select: { url: true },
   })
   const link = docs[0]
-  if (!link?.url) return new Response('Link not found', { status: 404, headers })
+  if (!link?.url) return new Response('Not found', { status: 404, headers })
 
   try {
     // Atomic increment, so simultaneous clicks are never lost.

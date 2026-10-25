@@ -25,7 +25,20 @@ export const Authors: CollectionConfig = {
       name: 'socials',
       type: 'array',
       admin: { description: 'Profile links (used as schema.org sameAs).' },
-      fields: [{ name: 'url', type: 'text', required: true }],
+      fields: [
+        {
+          name: 'url',
+          type: 'text',
+          required: true,
+          validate: (value: unknown) => {
+            try {
+              return /^https?:$/.test(new URL(String(value)).protocol) ? true : 'Use a full https:// link.'
+            } catch {
+              return 'Use a full link, e.g. https://www.instagram.com/name'
+            }
+          },
+        },
+      ],
     },
   ],
 }

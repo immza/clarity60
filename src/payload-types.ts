@@ -573,6 +573,9 @@ export interface Promotion {
   headline: string;
   text?: string | null;
   ctaLabel?: string | null;
+  /**
+   * A page on this site (/advertise) or a full https:// link.
+   */
   link: string;
   /**
    * Optional small image.

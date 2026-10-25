@@ -78,10 +78,6 @@ export default buildConfig({
     meta: { titleSuffix: ' · Clarity60 Admin' },
     importMap: { baseDir: path.resolve(dirname) },
   },
-  routes: {
-    // Kept out of the public repo's defaults; set PAYLOAD_ADMIN_ROUTE in production.
-    admin: (process.env.PAYLOAD_ADMIN_ROUTE as `/${string}` | undefined) || '/admin',
-  },
   collections: [Articles, Sections, Categories, Tags, Authors, Media, Pages, Corrections, AdSlots, Promotions, AffiliateLinks, Users, AuditLog].map(
     withHooks,
   ),

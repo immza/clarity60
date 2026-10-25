@@ -10,7 +10,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_media_license" AS ENUM('own', 'canva', 'public-domain', 'creative-commons', 'ai-generated', 'licensed');
   CREATE TYPE "public"."enum_pages_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__pages_v_version_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum_ad_slots_mode" AS ENUM('off', 'adsense', 'direct');
+  CREATE TYPE "public"."enum_ad_slots_mode" AS ENUM('off', 'house', 'adsense', 'direct');
   CREATE TYPE "public"."enum_ad_slots_size" AS ENUM('300x250', '728x90', 'in-feed', '320x100');
   CREATE TYPE "public"."enum_users_role" AS ENUM('super-admin', 'editor', 'writer');
   CREATE TYPE "public"."enum_audit_log_action" AS ENUM('create', 'update', 'publish', 'delete');
@@ -19,6 +19,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_payload_jobs_log_task_slug" AS ENUM('inline', 'refreshArticlePaths', 'schedulePublish');
   CREATE TYPE "public"."enum_payload_jobs_log_state" AS ENUM('failed', 'succeeded');
   CREATE TYPE "public"."enum_payload_jobs_task_slug" AS ENUM('inline', 'refreshArticlePaths', 'schedulePublish');
+  CREATE TYPE "public"."enum_site_settings_left_ear_kind" AS ENUM('custom', 'storiesToday');
+  CREATE TYPE "public"."enum_site_settings_right_ear_kind" AS ENUM('custom', 'storiesToday');
   CREATE TABLE "articles_sources" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
@@ -50,6 +52,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"byline_override" varchar,
   	"editorial_status" "enum_articles_editorial_status" DEFAULT 'draft',
   	"published_at" timestamp(3) with time zone,
+  	"sponsorship_is_sponsored" boolean,
+  	"sponsorship_sponsor_name" varchar,
+  	"sponsorship_sponsor_url" varchar,
   	"featured" boolean,
   	"top_story" boolean,
   	"path" varchar,
@@ -57,6 +62,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"word_count" numeric,
   	"column_inches" numeric,
   	"reading_minutes" numeric,
+  	"has_affiliate_links" boolean,
   	"created_by_id" integer,
   	"meta_title" varchar,
   	"meta_description" varchar,
@@ -109,6 +115,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_byline_override" varchar,
   	"version_editorial_status" "enum__articles_v_version_editorial_status" DEFAULT 'draft',
   	"version_published_at" timestamp(3) with time zone,
+  	"version_sponsorship_is_sponsored" boolean,
+  	"version_sponsorship_sponsor_name" varchar,
+  	"version_sponsorship_sponsor_url" varchar,
   	"version_featured" boolean,
   	"version_top_story" boolean,
   	"version_path" varchar,
@@ -116,6 +125,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"version_word_count" numeric,
   	"version_column_inches" numeric,
   	"version_reading_minutes" numeric,
+  	"version_has_affiliate_links" boolean,
   	"version_created_by_id" integer,
   	"version_meta_title" varchar,
   	"version_meta_description" varchar,
@@ -281,7 +291,48 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"adsense_slot_id" varchar,
   	"creative_id" integer,
   	"link" varchar,
+  	"direct_starts_at" timestamp(3) with time zone,
+  	"direct_ends_at" timestamp(3) with time zone,
   	"sponsor" varchar,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "promotions" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"title" varchar NOT NULL,
+  	"label" varchar DEFAULT 'From Clarity60',
+  	"headline" varchar NOT NULL,
+  	"text" varchar,
+  	"cta_label" varchar DEFAULT 'Learn more',
+  	"link" varchar NOT NULL,
+  	"image_id" integer,
+  	"active" boolean DEFAULT true,
+  	"starts_at" timestamp(3) with time zone,
+  	"ends_at" timestamp(3) with time zone,
+  	"weight" numeric DEFAULT 1,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+  );
+  
+  CREATE TABLE "promotions_rels" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"order" integer,
+  	"parent_id" integer NOT NULL,
+  	"path" varchar NOT NULL,
+  	"ad_slots_id" integer,
+  	"sections_id" integer,
+  	"categories_id" integer
+  );
+  
+  CREATE TABLE "affiliate_links" (
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"name" varchar NOT NULL,
+  	"slug" varchar NOT NULL,
+  	"partner" varchar,
+  	"url" varchar NOT NULL,
+  	"notes" varchar,
+  	"clicks" numeric DEFAULT 0,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
@@ -404,6 +455,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"pages_id" integer,
   	"corrections_id" integer,
   	"ad_slots_id" integer,
+  	"promotions_id" integer,
+  	"affiliate_links_id" integer,
   	"users_id" integer,
   	"audit_log_id" integer,
   	"redirects_id" integer
@@ -445,6 +498,16 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"id" serial PRIMARY KEY NOT NULL,
   	"tagline" varchar DEFAULT 'The world, explained.' NOT NULL,
   	"in_feed_ad_every" numeric DEFAULT 6 NOT NULL,
+  	"left_ear_enabled" boolean DEFAULT false,
+  	"left_ear_kind" "enum_site_settings_left_ear_kind" DEFAULT 'custom' NOT NULL,
+  	"left_ear_label" varchar DEFAULT 'Follow @theclarity60',
+  	"left_ear_text" varchar DEFAULT 'The 60-second version, on Instagram.',
+  	"left_ear_link" varchar DEFAULT 'https://www.instagram.com/theclarity60/',
+  	"right_ear_enabled" boolean DEFAULT false,
+  	"right_ear_kind" "enum_site_settings_right_ear_kind" DEFAULT 'storiesToday' NOT NULL,
+  	"right_ear_label" varchar DEFAULT 'Today',
+  	"right_ear_text" varchar DEFAULT 'Fresh stories, every day.',
+  	"right_ear_link" varchar,
   	"socials_instagram" varchar DEFAULT 'https://www.instagram.com/theclarity60/',
   	"socials_youtube" varchar,
   	"socials_x" varchar,
@@ -487,6 +550,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_pages_v" ADD CONSTRAINT "_pages_v_version_meta_image_id_media_id_fk" FOREIGN KEY ("version_meta_image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "corrections" ADD CONSTRAINT "corrections_article_id_articles_id_fk" FOREIGN KEY ("article_id") REFERENCES "public"."articles"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "ad_slots" ADD CONSTRAINT "ad_slots_creative_id_media_id_fk" FOREIGN KEY ("creative_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "promotions" ADD CONSTRAINT "promotions_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "promotions_rels" ADD CONSTRAINT "promotions_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."promotions"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "promotions_rels" ADD CONSTRAINT "promotions_rels_ad_slots_fk" FOREIGN KEY ("ad_slots_id") REFERENCES "public"."ad_slots"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "promotions_rels" ADD CONSTRAINT "promotions_rels_sections_fk" FOREIGN KEY ("sections_id") REFERENCES "public"."sections"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "promotions_rels" ADD CONSTRAINT "promotions_rels_categories_fk" FOREIGN KEY ("categories_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "users_sessions" ADD CONSTRAINT "users_sessions_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "users" ADD CONSTRAINT "users_author_id_authors_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."authors"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "audit_log" ADD CONSTRAINT "audit_log_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
@@ -504,6 +572,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_pages_fk" FOREIGN KEY ("pages_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_corrections_fk" FOREIGN KEY ("corrections_id") REFERENCES "public"."corrections"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_ad_slots_fk" FOREIGN KEY ("ad_slots_id") REFERENCES "public"."ad_slots"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_promotions_fk" FOREIGN KEY ("promotions_id") REFERENCES "public"."promotions"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_affiliate_links_fk" FOREIGN KEY ("affiliate_links_id") REFERENCES "public"."affiliate_links"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_audit_log_fk" FOREIGN KEY ("audit_log_id") REFERENCES "public"."audit_log"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_redirects_fk" FOREIGN KEY ("redirects_id") REFERENCES "public"."redirects"("id") ON DELETE cascade ON UPDATE no action;
@@ -601,6 +671,18 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "ad_slots_creative_idx" ON "ad_slots" USING btree ("creative_id");
   CREATE INDEX "ad_slots_updated_at_idx" ON "ad_slots" USING btree ("updated_at");
   CREATE INDEX "ad_slots_created_at_idx" ON "ad_slots" USING btree ("created_at");
+  CREATE INDEX "promotions_image_idx" ON "promotions" USING btree ("image_id");
+  CREATE INDEX "promotions_updated_at_idx" ON "promotions" USING btree ("updated_at");
+  CREATE INDEX "promotions_created_at_idx" ON "promotions" USING btree ("created_at");
+  CREATE INDEX "promotions_rels_order_idx" ON "promotions_rels" USING btree ("order");
+  CREATE INDEX "promotions_rels_parent_idx" ON "promotions_rels" USING btree ("parent_id");
+  CREATE INDEX "promotions_rels_path_idx" ON "promotions_rels" USING btree ("path");
+  CREATE INDEX "promotions_rels_ad_slots_id_idx" ON "promotions_rels" USING btree ("ad_slots_id");
+  CREATE INDEX "promotions_rels_sections_id_idx" ON "promotions_rels" USING btree ("sections_id");
+  CREATE INDEX "promotions_rels_categories_id_idx" ON "promotions_rels" USING btree ("categories_id");
+  CREATE UNIQUE INDEX "affiliate_links_slug_idx" ON "affiliate_links" USING btree ("slug");
+  CREATE INDEX "affiliate_links_updated_at_idx" ON "affiliate_links" USING btree ("updated_at");
+  CREATE INDEX "affiliate_links_created_at_idx" ON "affiliate_links" USING btree ("created_at");
   CREATE INDEX "users_sessions_order_idx" ON "users_sessions" USING btree ("_order");
   CREATE INDEX "users_sessions_parent_id_idx" ON "users_sessions" USING btree ("_parent_id");
   CREATE INDEX "users_author_idx" ON "users" USING btree ("author_id");
@@ -647,6 +729,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_pages_id_idx" ON "payload_locked_documents_rels" USING btree ("pages_id");
   CREATE INDEX "payload_locked_documents_rels_corrections_id_idx" ON "payload_locked_documents_rels" USING btree ("corrections_id");
   CREATE INDEX "payload_locked_documents_rels_ad_slots_id_idx" ON "payload_locked_documents_rels" USING btree ("ad_slots_id");
+  CREATE INDEX "payload_locked_documents_rels_promotions_id_idx" ON "payload_locked_documents_rels" USING btree ("promotions_id");
+  CREATE INDEX "payload_locked_documents_rels_affiliate_links_id_idx" ON "payload_locked_documents_rels" USING btree ("affiliate_links_id");
   CREATE INDEX "payload_locked_documents_rels_users_id_idx" ON "payload_locked_documents_rels" USING btree ("users_id");
   CREATE INDEX "payload_locked_documents_rels_audit_log_id_idx" ON "payload_locked_documents_rels" USING btree ("audit_log_id");
   CREATE INDEX "payload_locked_documents_rels_redirects_id_idx" ON "payload_locked_documents_rels" USING btree ("redirects_id");
@@ -685,6 +769,9 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "_pages_v" CASCADE;
   DROP TABLE "corrections" CASCADE;
   DROP TABLE "ad_slots" CASCADE;
+  DROP TABLE "promotions" CASCADE;
+  DROP TABLE "promotions_rels" CASCADE;
+  DROP TABLE "affiliate_links" CASCADE;
   DROP TABLE "users_sessions" CASCADE;
   DROP TABLE "users" CASCADE;
   DROP TABLE "audit_log" CASCADE;
@@ -717,5 +804,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_redirects_type";
   DROP TYPE "public"."enum_payload_jobs_log_task_slug";
   DROP TYPE "public"."enum_payload_jobs_log_state";
-  DROP TYPE "public"."enum_payload_jobs_task_slug";`)
+  DROP TYPE "public"."enum_payload_jobs_task_slug";
+  DROP TYPE "public"."enum_site_settings_left_ear_kind";
+  DROP TYPE "public"."enum_site_settings_right_ear_kind";`)
 }

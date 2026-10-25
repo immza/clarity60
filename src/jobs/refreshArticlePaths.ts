@@ -32,15 +32,16 @@ export const refreshArticlePaths: TaskConfig<'refreshArticlePaths'> = {
         if (!sectionId || !categoryId) continue
         const path = await buildArticlePath(payload, req, sectionId, categoryId, article.slug)
         if (path === article.path) continue
+        // Redirect first: if the path write then fails, the retry still sees the old path.
+        if (article._status === 'published' && article.publishedPath && article.publishedPath !== path) {
+          await upsertArticleRedirect(payload, req, article.publishedPath, path, article.id)
+        }
         await payload.db.updateOne({
           collection: 'articles',
           where: { id: { equals: article.id } },
           data: { path, ...(article._status === 'published' ? { publishedPath: path } : {}) },
           req,
         })
-        if (article._status === 'published' && article.publishedPath && article.publishedPath !== path) {
-          await upsertArticleRedirect(payload, req, article.publishedPath, path, article.id)
-        }
         updated++
       }
       if (!batch.hasNextPage) break

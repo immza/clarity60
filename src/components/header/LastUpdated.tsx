@@ -25,7 +25,11 @@ const forReader = (d: Date) => {
   return absolute(d)
 }
 
-const noopSubscribe = () => () => {}
+// Re-read the clock every minute so "12 min ago" stays true while the page is open.
+const everyMinute = (onChange: () => void) => {
+  const id = window.setInterval(onChange, 60_000)
+  return () => window.clearInterval(id)
+}
 
 /**
  * "Last updated 12 min ago": when the newest story was published or edited. Cached
@@ -33,7 +37,7 @@ const noopSubscribe = () => () => {}
  */
 export function LastUpdated({ iso }: { iso: string | null }) {
   const text = useSyncExternalStore(
-    noopSubscribe,
+    everyMinute,
     () => (iso ? forReader(new Date(iso)) : ''),
     () => (iso ? absolute(new Date(iso), 'UTC') : ''),
   )

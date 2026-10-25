@@ -371,7 +371,6 @@
 .wire {
   display: flex;
   align-items: stretch;
-  border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
   font-size: 0.875rem;
 }

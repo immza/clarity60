@@ -28,7 +28,21 @@ export const Promotions: CollectionConfig = {
     { name: 'headline', type: 'text', required: true, maxLength: 80 },
     { name: 'text', type: 'textarea', maxLength: 180 },
     { name: 'ctaLabel', type: 'text', defaultValue: 'Learn more', maxLength: 30 },
-    { name: 'link', type: 'text', required: true },
+    {
+      name: 'link',
+      type: 'text',
+      required: true,
+      admin: { description: 'A page on this site (/advertise) or a full https:// link.' },
+      validate: (value: unknown) => {
+        const v = String(value ?? '')
+        if (/^\/(?!\/)/.test(v)) return true
+        try {
+          return new URL(v).protocol === 'https:' ? true : 'Use https:// or a path starting with /'
+        } catch {
+          return 'Use a path starting with / or a full https:// link.'
+        }
+      },
+    },
     { name: 'image', type: 'upload', relationTo: 'media', admin: { description: 'Optional small image.' } },
     {
       type: 'collapsible',

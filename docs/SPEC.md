@@ -180,7 +180,7 @@ Sections, categories, sub-categories and navigation are all edited in the admin;
 - **Security**
   - Headers: CSP, HSTS, frame-ancestors, referrer policy.
   - Cloudflare WAF and rate limits.
-  - Admin route set from an environment variable.
+  - Admin at /admin, protected by mandatory 2FA, login lockout, `noindex`, and Cloudflare rate-limit/WAF rules (a hidden URL is no protection in a public repo).
   - Mandatory staff 2FA and an audit log.
   - Least-privilege API keys and RLS.
 - **Monitoring:** Sentry (errors and performance), GA4, Search Console, Cloudflare analytics, a free uptime monitor.

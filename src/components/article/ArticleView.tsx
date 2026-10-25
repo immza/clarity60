@@ -200,7 +200,7 @@ export async function ArticleView({ article }: { article: Article }) {
                 <span key={s.id ?? i}>
                   {i > 0 && '; '}
                   {s.url ? (
-                    <a href={s.url} rel="noopener nofollow" target="_blank">
+                    <a href={s.url} rel={sponsor ? 'sponsored noopener' : 'noopener nofollow'} target="_blank">
                       {s.outlet}
                     </a>
                   ) : (
@@ -213,7 +213,7 @@ export async function ArticleView({ article }: { article: Article }) {
 
           {article.instagramUrl && (
             <p className="article__ig">
-              <a href={article.instagramUrl} rel="noopener" target="_blank">
+              <a href={article.instagramUrl} rel={sponsor ? 'sponsored noopener' : 'noopener'} target="_blank">
                 ▶ Watch the 60-second version on Instagram
               </a>
             </p>

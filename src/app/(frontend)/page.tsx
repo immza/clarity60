@@ -133,10 +133,17 @@ export default async function FrontPage() {
               stories={feed.docs}
               basePath="/latest"
               page={1}
-              totalPages={feed.totalPages}
+              totalPages={1}
               adKey="home-in-feed"
               emptyText="The first edition is being written. Check back soon."
             />
+            {feed.totalPages > 1 && (
+              <p className="front__more-stories">
+                <Link href="/latest" prefetch={false}>
+                  More stories →
+                </Link>
+              </p>
+            )}
           </section>
 
           <aside className="front__side" aria-label={`From ${evergreenSection?.name ?? 'the explainers desk'}`}>

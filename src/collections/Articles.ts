@@ -41,7 +41,7 @@ export const Articles: CollectionConfig = {
   },
   custom: {
     totp: {
-      // Public visitors read published articles without logging in; staff reads still pass the TOTP check.
+      // Public visitors read published articles without logging in; drafts need verified 2FA (publishedOrStaff).
       disableAccessWrapper: { read: true },
     },
   },

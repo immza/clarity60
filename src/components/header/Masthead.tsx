@@ -120,6 +120,7 @@ export async function Masthead({ variant }: { variant: 'front' | 'compact' }) {
   ]
 
   return (
+    <>
     <header className={`masthead masthead--${variant}`}>
       <div className="wrap">
         <div className="masthead__top">
@@ -150,15 +151,21 @@ export async function Masthead({ variant }: { variant: 'front' | 'compact' }) {
             <p className="masthead__tagline">{settings.tagline}</p>
           </div>
         )}
+        <hr className="rule-double" />
       </div>
-
-      <nav className="nav" aria-label="Sections">
-        <div className="wrap">
-          <hr className="rule-double" />
-          <NavLinks items={nav} />
-          {variant === 'front' ? <Wire /> : <hr className="rule" />}
-        </div>
-      </nav>
     </header>
+    {/* Outside <header> so it can stick to the top of the viewport for the whole page. */}
+    <nav className="nav" aria-label="Sections">
+      <div className="wrap">
+        <NavLinks items={nav} />
+        <hr className="rule" />
+      </div>
+    </nav>
+    {variant === 'front' && (
+      <div className="wrap">
+        <Wire />
+      </div>
+    )}
+    </>
   )
 }

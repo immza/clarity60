@@ -6,8 +6,8 @@ export const slugify = (input: string): string =>
     .toLowerCase()
     .replace(/['’]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
     .slice(0, 96)
+    .replace(/^-+|-+$/g, '')
 
 type LexicalNode = { type?: string; text?: string; children?: LexicalNode[] }
 

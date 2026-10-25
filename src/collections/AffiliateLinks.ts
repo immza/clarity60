@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { anyone, editorsOnly, isStaff, superAdminOnly } from '@/access/roles'
+import { anyone, editorsOnly, superAdminOnly, verifiedStaffField } from '@/access/roles'
 import { slugField } from '@/fields/slug'
 
 /**
@@ -40,14 +40,14 @@ export const AffiliateLinks: CollectionConfig = {
     {
       name: 'notes',
       type: 'textarea',
-      access: { read: ({ req: { user } }) => isStaff(user) },
+      access: { read: verifiedStaffField },
       admin: { description: 'Internal only: commission rate, expiry, contact.' },
     },
     {
       name: 'clicks',
       type: 'number',
       defaultValue: 0,
-      access: { read: ({ req: { user } }) => isStaff(user) },
+      access: { read: verifiedStaffField },
       admin: { readOnly: true, position: 'sidebar' },
     },
   ],

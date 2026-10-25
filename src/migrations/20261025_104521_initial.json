@@ -268,6 +268,24 @@
           "primaryKey": false,
           "notNull": false
         },
+        "sponsorship_is_sponsored": {
+          "name": "sponsorship_is_sponsored",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sponsorship_sponsor_name": {
+          "name": "sponsorship_sponsor_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sponsorship_sponsor_url": {
+          "name": "sponsorship_sponsor_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "featured": {
           "name": "featured",
           "type": "boolean",
@@ -307,6 +325,12 @@
         "reading_minutes": {
           "name": "reading_minutes",
           "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_affiliate_links": {
+          "name": "has_affiliate_links",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": false
         },
@@ -1074,6 +1098,24 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version_sponsorship_is_sponsored": {
+          "name": "version_sponsorship_is_sponsored",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version_sponsorship_sponsor_name": {
+          "name": "version_sponsorship_sponsor_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version_sponsorship_sponsor_url": {
+          "name": "version_sponsorship_sponsor_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "version_featured": {
           "name": "version_featured",
           "type": "boolean",
@@ -1113,6 +1155,12 @@
         "version_reading_minutes": {
           "name": "version_reading_minutes",
           "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version_has_affiliate_links": {
+          "name": "version_has_affiliate_links",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": false
         },
@@ -3300,6 +3348,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "direct_starts_at": {
+          "name": "direct_starts_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "direct_ends_at": {
+          "name": "direct_ends_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "sponsor": {
           "name": "sponsor",
           "type": "varchar",
@@ -3398,6 +3458,484 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.promotions": {
+      "name": "promotions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'From Clarity60'"
+        },
+        "headline": {
+          "name": "headline",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cta_label": {
+          "name": "cta_label",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'Learn more'"
+        },
+        "link": {
+          "name": "link",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_id": {
+          "name": "image_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "weight": {
+          "name": "weight",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 1
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "promotions_image_idx": {
+          "name": "promotions_image_idx",
+          "columns": [
+            {
+              "expression": "image_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "promotions_updated_at_idx": {
+          "name": "promotions_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "promotions_created_at_idx": {
+          "name": "promotions_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "promotions_image_id_media_id_fk": {
+          "name": "promotions_image_id_media_id_fk",
+          "tableFrom": "promotions",
+          "tableTo": "media",
+          "columnsFrom": [
+            "image_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.promotions_rels": {
+      "name": "promotions_rels",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "path": {
+          "name": "path",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ad_slots_id": {
+          "name": "ad_slots_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sections_id": {
+          "name": "sections_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "categories_id": {
+          "name": "categories_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "promotions_rels_order_idx": {
+          "name": "promotions_rels_order_idx",
+          "columns": [
+            {
+              "expression": "order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "promotions_rels_parent_idx": {
+          "name": "promotions_rels_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "promotions_rels_path_idx": {
+          "name": "promotions_rels_path_idx",
+          "columns": [
+            {
+              "expression": "path",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "promotions_rels_ad_slots_id_idx": {
+          "name": "promotions_rels_ad_slots_id_idx",
+          "columns": [
+            {
+              "expression": "ad_slots_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "promotions_rels_sections_id_idx": {
+          "name": "promotions_rels_sections_id_idx",
+          "columns": [
+            {
+              "expression": "sections_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "promotions_rels_categories_id_idx": {
+          "name": "promotions_rels_categories_id_idx",
+          "columns": [
+            {
+              "expression": "categories_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "promotions_rels_parent_fk": {
+          "name": "promotions_rels_parent_fk",
+          "tableFrom": "promotions_rels",
+          "tableTo": "promotions",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "promotions_rels_ad_slots_fk": {
+          "name": "promotions_rels_ad_slots_fk",
+          "tableFrom": "promotions_rels",
+          "tableTo": "ad_slots",
+          "columnsFrom": [
+            "ad_slots_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "promotions_rels_sections_fk": {
+          "name": "promotions_rels_sections_fk",
+          "tableFrom": "promotions_rels",
+          "tableTo": "sections",
+          "columnsFrom": [
+            "sections_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "promotions_rels_categories_fk": {
+          "name": "promotions_rels_categories_fk",
+          "tableFrom": "promotions_rels",
+          "tableTo": "categories",
+          "columnsFrom": [
+            "categories_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.affiliate_links": {
+      "name": "affiliate_links",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "partner": {
+          "name": "partner",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "url": {
+          "name": "url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notes": {
+          "name": "notes",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clicks": {
+          "name": "clicks",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "affiliate_links_slug_idx": {
+          "name": "affiliate_links_slug_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "affiliate_links_updated_at_idx": {
+          "name": "affiliate_links_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "affiliate_links_created_at_idx": {
+          "name": "affiliate_links_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -4700,6 +5238,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "promotions_id": {
+          "name": "promotions_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affiliate_links_id": {
+          "name": "affiliate_links_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "users_id": {
           "name": "users_id",
           "type": "integer",
@@ -4900,6 +5450,36 @@
           "method": "btree",
           "with": {}
         },
+        "payload_locked_documents_rels_promotions_id_idx": {
+          "name": "payload_locked_documents_rels_promotions_id_idx",
+          "columns": [
+            {
+              "expression": "promotions_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_affiliate_links_id_idx": {
+          "name": "payload_locked_documents_rels_affiliate_links_id_idx",
+          "columns": [
+            {
+              "expression": "affiliate_links_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "payload_locked_documents_rels_users_id_idx": {
           "name": "payload_locked_documents_rels_users_id_idx",
           "columns": [
@@ -5070,6 +5650,32 @@
           "tableTo": "ad_slots",
           "columnsFrom": [
             "ad_slots_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_promotions_fk": {
+          "name": "payload_locked_documents_rels_promotions_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "promotions",
+          "columnsFrom": [
+            "promotions_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_affiliate_links_fk": {
+          "name": "payload_locked_documents_rels_affiliate_links_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "affiliate_links",
+          "columnsFrom": [
+            "affiliate_links_id"
           ],
           "columnsTo": [
             "id"
@@ -5533,6 +6139,77 @@
           "notNull": true,
           "default": 6
         },
+        "left_ear_enabled": {
+          "name": "left_ear_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "left_ear_kind": {
+          "name": "left_ear_kind",
+          "type": "enum_site_settings_left_ear_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'custom'"
+        },
+        "left_ear_label": {
+          "name": "left_ear_label",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'Follow @theclarity60'"
+        },
+        "left_ear_text": {
+          "name": "left_ear_text",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'The 60-second version, on Instagram.'"
+        },
+        "left_ear_link": {
+          "name": "left_ear_link",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'https://www.instagram.com/theclarity60/'"
+        },
+        "right_ear_enabled": {
+          "name": "right_ear_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "right_ear_kind": {
+          "name": "right_ear_kind",
+          "type": "enum_site_settings_right_ear_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'storiesToday'"
+        },
+        "right_ear_label": {
+          "name": "right_ear_label",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'Today'"
+        },
+        "right_ear_text": {
+          "name": "right_ear_text",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'Fresh stories, every day.'"
+        },
+        "right_ear_link": {
+          "name": "right_ear_link",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "socials_instagram": {
           "name": "socials_instagram",
           "type": "varchar",
@@ -5654,6 +6331,7 @@
       "schema": "public",
       "values": [
         "off",
+        "house",
         "adsense",
         "direct"
       ]
@@ -5728,6 +6406,22 @@
         "refreshArticlePaths",
         "schedulePublish"
       ]
+    },
+    "public.enum_site_settings_left_ear_kind": {
+      "name": "enum_site_settings_left_ear_kind",
+      "schema": "public",
+      "values": [
+        "custom",
+        "storiesToday"
+      ]
+    },
+    "public.enum_site_settings_right_ear_kind": {
+      "name": "enum_site_settings_right_ear_kind",
+      "schema": "public",
+      "values": [
+        "custom",
+        "storiesToday"
+      ]
     }
   },
   "schemas": {},
@@ -5740,6 +6434,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "6c411f6b-51f7-4f44-802c-e6cb6afdbecd",
+  "id": "f2591e51-315b-4d4f-bcf5-016301dc67fa",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
