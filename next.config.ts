@@ -1,4 +1,5 @@
 import { withPayload } from '@payloadcms/next/withPayload'
+import { withSentryConfig } from '@sentry/nextjs/config'
 import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -35,4 +36,16 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPayload(nextConfig, { devBundleServerPackages: false })
+export default withSentryConfig(withPayload(nextConfig, { devBundleServerPackages: false }), {
+  org: 'clarity60',
+  project: 'clarity60',
+  // Readable stack traces: source maps are uploaded at build time when this token is set
+  // (DigitalOcean build env), then deleted so they are never served publicly.
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  widenClientFileUpload: true,
+  // Browser reports go through our own domain so ad blockers do not hide real errors.
+  tunnelRoute: '/sentry-tunnel',
+  silent: !process.env.CI,
+  telemetry: false,
+})
