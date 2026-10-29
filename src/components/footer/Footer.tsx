@@ -18,7 +18,8 @@ const LINKS = [
 ]
 
 export async function Footer() {
-  const [correction, pageSlugs] = await Promise.all([getLatestCorrection(), getPublishedPageSlugs()])
+  const pageLinks = LINKS.filter((l) => l.href !== '/corrections').map((l) => l.href.slice(1))
+  const [correction, pageSlugs] = await Promise.all([getLatestCorrection(), getPublishedPageSlugs(pageLinks)])
   // Page links appear only once that page is published; /corrections is a built-in route.
   const links = LINKS.filter((l) => l.href === '/corrections' || pageSlugs.includes(l.href.slice(1)))
 
