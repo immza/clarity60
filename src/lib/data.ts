@@ -407,3 +407,19 @@ export const getAllCorrections = unstable_cache(
   ['all-corrections'],
   { tags: [TAGS.articles], revalidate: FALLBACK_REVALIDATE },
 )
+
+/** Slugs of published static pages (About, Privacy...), so links only point at pages that exist. */
+export const getPublishedPageSlugs = unstable_cache(
+  async () => {
+    const { docs } = await (await payload()).find({
+      collection: 'pages',
+      depth: 0,
+      limit: 200,
+      overrideAccess: false,
+      select: { slug: true },
+    })
+    return docs.map((d) => d.slug)
+  },
+  ['published-page-slugs'],
+  { tags: [TAGS.pages], revalidate: FALLBACK_REVALIDATE },
+)

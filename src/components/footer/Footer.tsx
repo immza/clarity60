@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { PrivacyChoicesLink } from '@/components/consent/ConsentBanner'
-import { getLatestCorrection } from '@/lib/data'
+import { getLatestCorrection, getPublishedPageSlugs } from '@/lib/data'
 
 import './footer.css'
 
@@ -18,7 +18,9 @@ const LINKS = [
 ]
 
 export async function Footer() {
-  const correction = await getLatestCorrection()
+  const [correction, pageSlugs] = await Promise.all([getLatestCorrection(), getPublishedPageSlugs()])
+  // Page links appear only once that page is published; /corrections is a built-in route.
+  const links = LINKS.filter((l) => l.href === '/corrections' || pageSlugs.includes(l.href.slice(1)))
 
   return (
     <footer className="footer">
@@ -46,7 +48,7 @@ export async function Footer() {
           <div className="footer__meta">
             <p>© {new Date().getFullYear()} Clarity60 · clarity60.com</p>
             <ul className="footer__links">
-              {LINKS.map((l) => (
+              {links.map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} prefetch={false}>
                     {l.label}
