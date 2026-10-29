@@ -35,4 +35,16 @@ describe('upload file names', () => {
     created.push(doc.id)
     expect(doc.filename).toBe('my-test-photo.jpg')
   })
+
+  it('uses the real file type, not the claimed one', async () => {
+    const png = await sharp({ create: { width: 8, height: 8, channels: 3, background: '#cccccc' } }).png().toBuffer()
+    const doc = await payload.create({
+      collection: 'media',
+      data: { alt: 'Mislabelled image', credit: 'Clarity60', license: 'own' },
+      file: { data: png, mimetype: 'image/jpeg', name: 'Mislabelled Upload.jpg', size: png.length },
+      overrideAccess: true,
+    })
+    created.push(doc.id)
+    expect(doc.filename).toBe('mislabelled-upload.png')
+  })
 })

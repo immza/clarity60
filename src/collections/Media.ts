@@ -1,6 +1,8 @@
 import type { CollectionConfig } from 'payload'
 
 import { anyone, editorsOnly, staffOnly } from '@/access/roles'
+import { fileTypeFromBuffer } from 'file-type'
+
 import { tidyUploadName } from '@/lib/text'
 
 export const Media: CollectionConfig = {
@@ -10,11 +12,13 @@ export const Media: CollectionConfig = {
   custom: { totp: { disableAccessWrapper: { read: true } } },
   hooks: {
     // Before the file is stored: give it a clean, SEO-friendly name with the right extension.
+    // The extension comes from the file's actual contents, not the type the browser claimed.
     beforeOperation: [
-      ({ args, operation }) => {
+      async ({ args, operation }) => {
         const file = args.req?.file
         if ((operation === 'create' || operation === 'update') && file?.name) {
-          file.name = tidyUploadName(file.name, file.mimetype)
+          const detected = file.data?.length ? await fileTypeFromBuffer(file.data) : undefined
+          file.name = tidyUploadName(file.name, detected?.mime ?? file.mimetype)
         }
         return args
       },
