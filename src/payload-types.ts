@@ -304,6 +304,8 @@ export interface Media {
    * Link to the original, required for Creative Commons.
    */
   sourceUrl?: string | null;
+  prefix?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -1032,6 +1034,8 @@ export interface MediaSelect<T extends boolean = true> {
   credit?: T;
   license?: T;
   sourceUrl?: T;
+  prefix?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

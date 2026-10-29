@@ -1,13 +1,42 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// payload-totp needs the pathname in server components to avoid a redirect loop.
+import { clientIp, rateLimit } from './lib/rateLimit'
+
+// Sign-in endpoints: 10 attempts per IP per 10 minutes, on top of Payload's per-account lockout.
+const AUTH_PATHS = /^\/api\/users\/(login|forgot-password|reset-password|first-register|unlock)$|^\/api\/(verify-totp|setup-totp)$/
+const AUTH_LIMIT = 10
+const AUTH_WINDOW_MS = 10 * 60_000
+
 export function proxy(request: NextRequest) {
-  // headers() in server components reads request headers, so forward it on the request.
+  const { pathname } = request.nextUrl
+
+  // One canonical host: www.clarity60.com → clarity60.com (path and query kept).
+  const host = request.headers.get('host') ?? ''
+  if (host.startsWith('www.')) {
+    const url = request.nextUrl.clone()
+    url.host = host.slice(4)
+    url.port = ''
+    // TLS ends at the edge, so the app sees http; always send readers to https in production.
+    if (process.env.NODE_ENV === 'production') url.protocol = 'https:'
+    return NextResponse.redirect(url, 308)
+  }
+
+  if (request.method === 'POST' && AUTH_PATHS.test(pathname)) {
+    const { allowed, retryAfter } = rateLimit(`auth:${clientIp(request.headers)}`, AUTH_LIMIT, AUTH_WINDOW_MS)
+    if (!allowed) {
+      return NextResponse.json(
+        { errors: [{ message: 'Too many attempts. Please wait a few minutes and try again.' }] },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+      )
+    }
+  }
+
+  // payload-totp reads the pathname in server components; headers() sees request headers.
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-pathname', request.nextUrl.pathname)
+  requestHeaders.set('x-pathname', pathname)
   const response = NextResponse.next({ request: { headers: requestHeaders } })
-  response.headers.set('x-pathname', request.nextUrl.pathname)
+  response.headers.set('x-pathname', pathname)
   return response
 }
 

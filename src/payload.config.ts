@@ -1,6 +1,7 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { redirectsPlugin } from '@payloadcms/plugin-redirects'
 import { seoPlugin } from '@payloadcms/plugin-seo'
+import { s3Storage } from '@payloadcms/storage-s3'
 import path from 'path'
 import type { CollectionConfig } from 'payload'
 import { buildConfig } from 'payload'
@@ -28,12 +29,24 @@ import { auditAfterChange, auditAfterDelete } from './hooks/auditLog'
 import { revalidateAfterChange, revalidateAfterDelete, revalidateGlobal } from './hooks/revalidate'
 import { refreshArticlePaths } from './jobs/refreshArticlePaths'
 import { TAGS } from './lib/cacheTags'
+import { databaseTls } from './lib/databaseTls'
 import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+const databaseUrl = process.env.DATABASE_URL || ''
+
+// Production media storage is all-or-nothing: a half-configured setup would store files
+// that can't be served (or fail every upload), so refuse to boot instead.
+const STORAGE_VARS = ['S3_BUCKET', 'S3_ENDPOINT', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY', 'IMAGEKIT_URL_ENDPOINT']
+const storageEnabled = Boolean(process.env.S3_BUCKET)
+if (storageEnabled) {
+  const missing = STORAGE_VARS.filter((key) => !process.env[key])
+  if (missing.length) throw new Error(`Media storage is enabled (S3_BUCKET is set) but missing: ${missing.join(', ')}`)
+}
 
 /** Public cache tags each collection's changes should clear. */
 const CACHE_TAGS: Partial<Record<string, string[]>> = {
@@ -86,7 +99,7 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
-    pool: { connectionString: process.env.DATABASE_URL || '' },
+    pool: { connectionString: databaseUrl, ...databaseTls(databaseUrl, process.env.DATABASE_CA_CERT) },
     // Local dev syncs the schema directly; production applies committed migrations on boot.
     push: process.env.NODE_ENV !== 'production',
     prodMigrations: migrations,
@@ -111,6 +124,31 @@ export default buildConfig({
     shouldAutoRun: () => process.env.DISABLE_JOBS !== 'true',
   },
   plugins: [
+    // Production media: Supabase Storage (S3 API) as the store, ImageKit in front for delivery.
+    // Off unless S3_BUCKET is set, so local development keeps using ./media.
+    s3Storage({
+      enabled: storageEnabled,
+      // Same media columns whether or not storage is on, so one migration fits every environment.
+      alwaysInsertFields: true,
+      bucket: process.env.S3_BUCKET || '',
+      collections: {
+        media: {
+          prefix: 'media',
+          disablePayloadAccessControl: true,
+          generateFileURL: ({ filename, prefix }) =>
+            `${(process.env.IMAGEKIT_URL_ENDPOINT || '').replace(/\/$/, '')}/${prefix ? `${prefix}/` : ''}${filename}`,
+        },
+      },
+      config: {
+        endpoint: process.env.S3_ENDPOINT,
+        region: process.env.S3_REGION || 'us-west-2',
+        forcePathStyle: true,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+        },
+      },
+    }),
     seoPlugin({
       collections: ['articles', 'pages'],
       uploadsCollection: 'media',

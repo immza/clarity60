@@ -4,19 +4,21 @@ import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import { securityHeaders } from './src/lib/securityHeaders'
+
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   images: {
-    localPatterns: [
-      {
-        pathname: '/api/media/file/**',
-      },
-    ],
+    // ImageKit does resizing and format conversion (see src/lib/imageLoader.ts).
+    loader: 'custom',
+    loaderFile: './src/lib/imageLoader.ts',
   },
   async headers() {
     return [
+      { source: '/:path*', headers: securityHeaders },
       // The admin panel must never appear in search results.
       { source: '/admin/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
       { source: '/admin', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },

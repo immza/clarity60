@@ -1,0 +1,82 @@
+name: Nightly database backup
+
+# Encrypted pg_dump of the production database, kept 30 days as a workflow artifact.
+# Artifacts on a public repo are downloadable by any GitHub user, so the dump is
+# encrypted (AES-256, PBKDF2) with BACKUP_PASSPHRASE before upload. Restore: the
+# "Restore drill" workflow, or scripts/restore-backup.sh.
+# Needs repo secrets BACKUP_DATABASE_URL, BACKUP_PASSPHRASE and DATABASE_CA_CERT.
+#
+# GitHub pauses scheduled workflows after 60 days without repo activity, so every run
+# checks in with a Sentry cron monitor; Sentry emails if a nightly check-in is missed.
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # 03:17 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      # Sentry cron monitor (the DSN is public by design).
+      SENTRY_CRON_URL: https://o4512316679520256.ingest.us.sentry.io/api/4512316688433152/cron/nightly-db-backup/1859897559c199bc447015b4ffbd9c7b/
+      # The database's CA certificate (PEM): the backup verifies who it is talking to.
+      DATABASE_CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
+      CURL: curl -fsS --connect-timeout 10 --max-time 20
+    steps:
+      - name: Check in with Sentry (creates the monitor on first run)
+        run: |
+          CHECK_IN_ID=$(uuidgen)
+          echo "CHECK_IN_ID=$CHECK_IN_ID" >> "$GITHUB_ENV"
+          $CURL -X POST "$SENTRY_CRON_URL" -H 'Content-Type: application/json' \
+            --data "{\"check_in_id\":\"$CHECK_IN_ID\",\"status\":\"in_progress\",\"monitor_config\":{\"schedule\":{\"type\":\"crontab\",\"value\":\"17 3 * * *\"},\"timezone\":\"UTC\",\"checkin_margin\":60,\"max_runtime\":30,\"failure_issue_threshold\":1}}" || true
+
+      - name: Check secrets
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ] || [ -z "$DATABASE_CA_CERT" ]; then
+            echo "::error::BACKUP_DATABASE_URL, BACKUP_PASSPHRASE and DATABASE_CA_CERT secrets are required"; exit 1
+          fi
+
+      - name: Dump (pg_dump 17, matching the server)
+        run: |
+          # Certificate-verified TLS (verify-full). Parameters in the URL could override it, so refuse them.
+          case "$DATABASE_URL" in *\?*host=*|*\?*hostaddr=*|*\?*ssl*=*|*\&host=*|*\&ssl*=*)
+            echo "::error::BACKUP_DATABASE_URL must not contain host or ssl parameters"; exit 1 ;; esac
+          printf '%s\n' "$DATABASE_CA_CERT" > ca.pem
+          docker run --rm -e PGCONNECT_TIMEOUT=30 -e PGSSLMODE=verify-full -e PGSSLROOTCERT=/certs/ca.pem \
+            -v "$PWD/ca.pem:/certs/ca.pem:ro" postgres:17 \
+            pg_dump --format=custom --no-owner --no-privileges --schema=public "$DATABASE_URL" > db.dump
+          test -s db.dump
+          ls -lh db.dump
+
+      - name: Encrypt
+        run: |
+          STAMP=$(date -u +%Y-%m-%dT%H%MZ)
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in db.dump -out "clarity60-$STAMP.dump.enc" -pass env:BACKUP_PASSPHRASE
+          shred -u db.dump
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: clarity60-db-${{ env.STAMP }}
+          path: clarity60-*.dump.enc
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Report success to Sentry
+        if: success()
+        run: $CURL "${SENTRY_CRON_URL}?check_in_id=${CHECK_IN_ID}&status=ok" || true
+
+      - name: Report failure to Sentry
+        if: failure()
+        run: $CURL "${SENTRY_CRON_URL}?check_in_id=${CHECK_IN_ID}&status=error" || true
