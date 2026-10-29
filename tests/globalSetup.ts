@@ -1,8 +1,12 @@
 // Points integration tests at a throwaway `<db>_test` database so they never touch dev data.
 import 'dotenv/config'
+import { rmSync } from 'node:fs'
 import pg from 'pg'
 
 export default async function setup() {
+  // Fresh scratch folder for test uploads, so leftovers from an interrupted run can't collide.
+  rmSync('.test-media', { recursive: true, force: true })
+
   const base = new URL(process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:5432/clarity60')
   const testDb = `${base.pathname.slice(1)}_test`
 

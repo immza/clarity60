@@ -54,3 +54,6 @@ node_modules/
 
 # uploaded media (local dev)
 /media
+
+# test uploads
+/.test-media
