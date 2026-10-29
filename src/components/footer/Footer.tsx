@@ -1,14 +1,16 @@
 import Link from 'next/link'
 
-import { CookieSettingsLink } from '@/components/consent/ConsentBanner'
+import { PrivacyChoicesLink } from '@/components/consent/ConsentBanner'
 import { getLatestCorrection } from '@/lib/data'
 
 import './footer.css'
 
 const LINKS = [
   { label: 'About', href: '/about' },
+  { label: 'Editorial Standards', href: '/editorial-standards' },
   { label: 'Corrections', href: '/corrections' },
   { label: 'Advertise', href: '/advertise' },
+  { label: 'Ad & Affiliate Disclosure', href: '/advertising-disclosure' },
   { label: 'Contact', href: '/contact' },
   { label: 'Privacy', href: '/privacy' },
   { label: 'Cookies', href: '/cookies' },
@@ -51,11 +53,9 @@ export async function Footer() {
                   </Link>
                 </li>
               ))}
-              {process.env.NEXT_PUBLIC_GA_ID && (
-                <li>
-                  <CookieSettingsLink />
-                </li>
-              )}
+              <li>
+                <PrivacyChoicesLink hasConsentBanner={Boolean(process.env.NEXT_PUBLIC_GA_ID)} />
+              </li>
             </ul>
           </div>
         </div>

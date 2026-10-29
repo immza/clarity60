@@ -118,9 +118,26 @@ await ensure('promotions', { title: { equals: 'Advertise with us' } }, {
 })
 
 // Standard pages, published once with starter text; edit them in Admin → Pages.
+// SEED_UPDATE_PAGES=true replaces existing standard pages with the current templates
+// (overwrites edits made in the admin, so use it only before launch or deliberately).
+const updatePages = process.env.SEED_UPDATE_PAGES === 'true'
 for (const tpl of PAGE_TEMPLATES) {
-  const exists = await payload.count({ collection: 'pages', where: { slug: { equals: tpl.slug } } })
-  if (exists.totalDocs) continue
+  const existing = await payload.find({ collection: 'pages', where: { slug: { equals: tpl.slug } }, limit: 1, depth: 0 })
+  if (existing.docs[0]) {
+    if (!updatePages) continue
+    await payload.update({
+      collection: 'pages',
+      id: existing.docs[0].id,
+      data: {
+        title: tpl.title,
+        body: tpl.body as never,
+        meta: { title: `${tpl.title} · Clarity60`, description: tpl.description },
+        _status: 'published',
+      },
+    })
+    payload.logger.info(`seed: updated page /${tpl.slug}`)
+    continue
+  }
   await payload.create({
     collection: 'pages',
     data: {
