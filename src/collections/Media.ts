@@ -1,14 +1,27 @@
 import type { CollectionConfig } from 'payload'
 
 import { anyone, editorsOnly, staffOnly } from '@/access/roles'
+import { tidyUploadName } from '@/lib/text'
 
 export const Media: CollectionConfig = {
   slug: 'media',
   admin: { defaultColumns: ['filename', 'alt', 'credit', 'license'], group: 'Content' },
   access: { read: anyone, create: staffOnly, update: staffOnly, delete: editorsOnly },
   custom: { totp: { disableAccessWrapper: { read: true } } },
+  hooks: {
+    // Before the file is stored: give it a clean, SEO-friendly name with the right extension.
+    beforeOperation: [
+      ({ args, operation }) => {
+        const file = args.req?.file
+        if ((operation === 'create' || operation === 'update') && file?.name) {
+          file.name = tidyUploadName(file.name, file.mimetype)
+        }
+        return args
+      },
+    ],
+  },
   upload: {
-    // Local disk in development; Cloudflare R2 + ImageKit in production (Milestone 1b).
+    // Local disk in development; Supabase Storage + ImageKit in production (see payload.config.ts).
     staticDir: 'media',
     mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'video/mp4', 'video/webm'],
     adminThumbnail: 'thumbnail',

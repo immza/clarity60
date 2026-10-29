@@ -55,3 +55,24 @@ export const hasAffiliateContent = (richText: unknown): boolean => {
   }
   return walk(root)
 }
+
+const EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/avif': 'avif',
+  'image/gif': 'gif',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+}
+
+/**
+ * Clean upload file name: "Twitch streamer scammed" (image/jpeg) → "twitch-streamer-scammed.jpg".
+ * Lowercase, hyphens, no spaces, and the extension always matches the actual file type.
+ */
+export const tidyUploadName = (name: string, mimeType: string) => {
+  const ext = EXTENSIONS[mimeType]
+  const base = name.replace(/\.[a-z0-9]{2,5}$/i, '')
+  const slug = slugify(base) || 'image'
+  return ext ? `${slug}.${ext}` : slug
+}
