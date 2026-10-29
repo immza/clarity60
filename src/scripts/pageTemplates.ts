@@ -5,17 +5,13 @@
  * Google News transparency) and the main privacy laws (EU/UK GDPR, ePrivacy, US state
  * laws incl. California, COPPA). Have a lawyer review once before monetising.
  *
- * Fill in PUBLISHER below before launch: these values appear across the legal pages.
+ * Publisher identity: Clarity60 is presented as the brand, with no personal name, country
+ * or postal address. If a company is formed later, set `company` and `address` and
+ * `governingLaw`; every page picks them up. Re-seed with SEED_UPDATE_PAGES=true (before
+ * launch) or edit the pages in Admin → Pages (after launch).
  */
-export const PUBLISHER = {
-  /** Legal name of the person or company that owns Clarity60. */
-  legalName: '[PUBLISHER LEGAL NAME]',
-  /** Country whose law governs the Terms, e.g. "Bangladesh" or "England and Wales". */
-  governingLaw: '[COUNTRY / JURISDICTION]',
-  /** Postal address for legal and privacy notices (a business or PO address is fine). */
-  address: '[POSTAL ADDRESS]',
+export const PUBLISHER: { company?: string; address?: string; governingLaw?: string; email: string } = {
   email: 'hello@clarity60.com',
-  effectiveDate: '[EFFECTIVE DATE]',
 }
 
 type Node = Record<string, unknown>
@@ -67,8 +63,13 @@ const a = (label: string, url: string): Node => ({
 })
 const doc = (...children: Node[]) => ({ root: { type: 'root', version: 1, format: '', indent: 0, direction: 'ltr', children } })
 
-const { legalName, governingLaw, address, email, effectiveDate } = PUBLISHER
+const { company, address, governingLaw, email } = PUBLISHER
 const mail = a(email, `mailto:${email}`)
+/** "Clarity60" on its own, or "Clarity60, operated by <company>" once a company exists. */
+const publisherName = company ? `Clarity60, operated by ${company}` : 'Clarity60'
+const postal = address ? `${company ?? 'Clarity60'}, ${address}` : null
+// Pages are dated the day they are seeded (launch); later edits are dated in the admin text.
+const effectiveDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 const updated = p(bold('Last updated: '), effectiveDate)
 
 export type PageTemplate = { slug: string; title: string; description: string; body: ReturnType<typeof doc> }
@@ -81,7 +82,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     body: doc(
       p('Clarity60 explains the world in plain English. We publish two kinds of stories: world news that tells you what happened, where and why it matters, and explainers that give you the backstory behind it.'),
       h2('Who we are'),
-      p(`Clarity60 is published by ${legalName}. We are independent: no government, political party or company owns or directs our journalism.`),
+      p(`Clarity60 is an independent, international publication${company ? ` operated by ${company}` : ''}. No government, political party or outside company owns or directs our journalism.`),
       h2('How we are funded'),
       p('Clarity60 is free to read. We are funded by advertising, affiliate commissions and clearly labelled sponsored content. Advertisers never decide what we cover or what we say. ', a('How advertising works on Clarity60', '/advertising-disclosure'), '.'),
       h2('Our standards'),
@@ -140,7 +141,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       ul(
         [bold('Corrections: '), 'send the story link and what is wrong. See our ', a('Editorial Standards', '/editorial-standards'), '.'],
         [bold('Privacy requests: '), 'access, correction, deletion or opt-out. See our ', a('Privacy Policy', '/privacy'), '.'],
-        [bold('Copyright and legal notices: '), `email us, or write to ${legalName}, ${address}.`],
+        [bold('Copyright and legal notices: '), postal ? `email us, or write to ${postal}.` : 'email us; we reply to every notice.'],
         [bold('Advertising and partnerships: '), a('Advertise with Clarity60', '/advertise'), '.'],
       ),
       p('Instagram: ', a('@theclarity60', 'https://www.instagram.com/theclarity60/')),
@@ -192,7 +193,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       p('This policy explains what personal data we collect when you use clarity60.com, why we collect it, who we share it with and the choices and rights you have. We collect as little as we need.'),
 
       h2('1. Who is responsible'),
-      p(`The controller of your personal data is ${legalName}, ${address} ("Clarity60", "we", "us"). Contact: `, mail, '.'),
+      p(`The controller of your personal data is ${publisherName}${address ? `, ${address}` : ''}${company ? ' ("Clarity60", "we", "us")' : ' ("we", "us")'}. For anything about your data, including requests to exercise your rights, contact: `, mail, '. We answer every privacy request.'),
 
       h2('2. What we collect'),
       h3('When you read the site'),
@@ -280,7 +281,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       p('We will update this policy when our practices change and change the date at the top. Significant changes will be highlighted on the site.'),
 
       h2('14. Contact'),
-      p(`${legalName}, ${address}. Email: `, mail, '.'),
+      p(`${postal ?? publisherName}. Email: `, mail, '.'),
     ),
   },
   {
@@ -320,7 +321,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     description: 'The terms for using clarity60.com.',
     body: doc(
       updated,
-      p(`These terms apply to your use of clarity60.com, published by ${legalName}. By using the site you agree to them. If you do not agree, please do not use the site.`),
+      p(`These terms apply to your use of clarity60.com, published by ${publisherName} ("Clarity60", "we", "us"). By using the site you agree to them. If you do not agree, please do not use the site.`),
       h2('1. Our content'),
       p('Clarity60’s articles, images, design and logo belong to us or our licensors and are protected by copyright and trademark law. You may read and share links to our stories, and quote short extracts with clear attribution and a link to the original. Republishing whole articles, systematic copying, or scraping for commercial use requires our written permission.'),
       h2('2. Information, not advice'),
@@ -337,15 +338,19 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       h2('5. Acceptable use'),
       p('Do not attempt to disrupt, overload, probe or gain unauthorised access to the site, bypass its security, or use automated tools in a way that harms it or its users.'),
       h2('6. Copyright complaints'),
-      p(`If you believe something on Clarity60 infringes your copyright, email `, mail, ` with: the work, where it appears on our site, your contact details, a statement that you believe in good faith the use is not authorised, and a statement that the information is accurate and that you are the owner or authorised to act for them. We will review it promptly and remove infringing material. Postal notices: ${legalName}, ${address}.`),
+      p(`If you believe something on Clarity60 infringes your copyright, email `, mail, ` with: the work, where it appears on our site, your contact details, a statement that you believe in good faith the use is not authorised, and a statement that the information is accurate and that you are the owner or authorised to act for them. We will review it promptly and remove infringing material.${postal ? ` Postal notices: ${postal}.` : ''}`),
       h2('7. Disclaimers and liability'),
       p('The site is provided "as is". To the fullest extent the law allows, we do not guarantee it will always be available or error-free, and we are not liable for indirect or consequential losses arising from its use. Nothing in these terms limits liability that cannot be limited by law, or your rights as a consumer.'),
       h2('8. Changes'),
       p('We may update these terms; the date at the top shows the latest version. Continued use after changes means you accept them.'),
       h2('9. Governing law'),
-      p(`These terms are governed by the laws of ${governingLaw}, without affecting any mandatory consumer protections of the country where you live.`),
+      p(
+        governingLaw
+          ? `These terms are governed by the laws of ${governingLaw}, without affecting any mandatory consumer protections of the country where you live.`
+          : 'Nothing in these terms limits the mandatory consumer protections of the country where you live. If a dispute arises, please contact us first: most issues can be resolved quickly and informally.',
+      ),
       h2('10. Contact'),
-      p(`${legalName}, ${address}. Email: `, mail, '.'),
+      p(`${postal ?? publisherName}. Email: `, mail, '.'),
     ),
   },
 ]

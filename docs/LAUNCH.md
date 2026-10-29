@@ -97,7 +97,8 @@ SEED_ADMIN_EMAIL='you@example.com' SEED_ADMIN_PASSWORD='<long unique password>' 
    - Then run **Actions → Restore drill → Run**. It restores the newest backup into a throwaway database and prints the article count. Repeat monthly.
    - Each run checks in with Sentry's **Crons** monitor `nightly-db-backup`. If GitHub ever pauses the schedule (it does after 60 days with no repo activity), Sentry emails about the missed run.
 7. **Sentry:** in Project Settings → **Security & Privacy**, turn on **Prevent Storing of IP Addresses** (the Privacy Policy promises error reports exclude IPs). Then watch Issues for the first day.
-8. **Legal pages:** before launch, fill in `PUBLISHER` at the top of `src/scripts/pageTemplates.ts` (legal name, jurisdiction, postal address, effective date). After launch, edit the pages in Admin → Pages.
+8. **Legal pages:** they present Clarity60 as the publisher, contact by email only, dated the day they are seeded. If a company is formed later, set `company`, `address` and `governingLaw` in `PUBLISHER` (`src/scripts/pageTemplates.ts`) and update the pages. After launch, edit them in Admin → Pages.
+9. **Domain privacy:** confirm Namecheap → clarity60.com → **Domain Privacy** is ON, so no personal details show in WHOIS.
 
 ## Later
 
