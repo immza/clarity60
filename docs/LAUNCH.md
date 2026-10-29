@@ -93,6 +93,7 @@ SEED_ADMIN_EMAIL='you@example.com' SEED_ADMIN_PASSWORD='<long unique password>' 
 6. **Backups:**
    - Add the GitHub repo secrets `BACKUP_DATABASE_URL` (the session pooler string), `BACKUP_PASSPHRASE` and `DATABASE_CA_CERT`. Keep the passphrase in a password manager; without it, backups cannot be read.
    - Run the workflow once by hand: Actions → Nightly database backup → Run.
+   - For a manual restore with `scripts/restore-backup.sh`, save the certificate to a file and pass it: `PGSSLROOTCERT=~/Downloads/prod-ca-2021.crt`.
    - Then run **Actions → Restore drill → Run**. It restores the newest backup into a throwaway database and prints the article count. Repeat monthly.
    - Each run checks in with Sentry's **Crons** monitor `nightly-db-backup`. If GitHub ever pauses the schedule (it does after 60 days with no repo activity), Sentry emails about the missed run.
 7. **Sentry:** trigger nothing on purpose. Watch Issues for the first day.

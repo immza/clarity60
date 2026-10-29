@@ -22,6 +22,10 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$ENC_FILE" -out "$TMP/db.dump" -pass env:BACKUP_PASSPHRASE
 
+# Parameters in the URL could override the TLS settings below, so refuse them.
+case "$TARGET_URL" in *\?*host=*|*\?*hostaddr=*|*\?*ssl*=*|*\&host=*|*\&ssl*=*)
+  echo "Refusing: the target URL must not contain host or ssl parameters; TLS is enforced by this script."; exit 1 ;; esac
+
 # Certificate-verified TLS for anything that isn't this machine.
 case "$TARGET_URL" in
   *@localhost*|*@127.0.0.1*) TLS=(-e PGSSLMODE=disable) ;;

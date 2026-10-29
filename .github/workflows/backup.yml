@@ -49,7 +49,9 @@ jobs:
 
       - name: Dump (pg_dump 17, matching the server)
         run: |
-          # Certificate-verified TLS (verify-full) to the database.
+          # Certificate-verified TLS (verify-full). Parameters in the URL could override it, so refuse them.
+          case "$DATABASE_URL" in *\?*host=*|*\?*hostaddr=*|*\?*ssl*=*|*\&host=*|*\&ssl*=*)
+            echo "::error::BACKUP_DATABASE_URL must not contain host or ssl parameters"; exit 1 ;; esac
           printf '%s\n' "$DATABASE_CA_CERT" > ca.pem
           docker run --rm -e PGCONNECT_TIMEOUT=30 -e PGSSLMODE=verify-full -e PGSSLROOTCERT=/certs/ca.pem \
             -v "$PWD/ca.pem:/certs/ca.pem:ro" postgres:17 \

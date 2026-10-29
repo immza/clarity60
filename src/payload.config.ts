@@ -29,6 +29,7 @@ import { auditAfterChange, auditAfterDelete } from './hooks/auditLog'
 import { revalidateAfterChange, revalidateAfterDelete, revalidateGlobal } from './hooks/revalidate'
 import { refreshArticlePaths } from './jobs/refreshArticlePaths'
 import { TAGS } from './lib/cacheTags'
+import { databaseTls } from './lib/databaseTls'
 import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
@@ -36,19 +37,7 @@ const dirname = path.dirname(filename)
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-/**
- * Any database that isn't on this machine must use certificate-verified TLS: the
- * provider's CA (DATABASE_CA_CERT, PEM text) is required, and the server's identity is
- * checked. Local databases (dev, tests, CI) connect without TLS.
- */
 const databaseUrl = process.env.DATABASE_URL || ''
-const databaseTls = () => {
-  const isLocal = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(databaseUrl)
-  if (isLocal || !databaseUrl) return {}
-  const ca = process.env.DATABASE_CA_CERT
-  if (!ca) throw new Error('DATABASE_CA_CERT is required for a remote database (see docs/LAUNCH.md §1).')
-  return { ssl: { ca, rejectUnauthorized: true } }
-}
 
 // Production media storage is all-or-nothing: a half-configured setup would store files
 // that can't be served (or fail every upload), so refuse to boot instead.
@@ -110,7 +99,7 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
-    pool: { connectionString: databaseUrl, ...databaseTls() },
+    pool: { connectionString: databaseUrl, ...databaseTls(databaseUrl, process.env.DATABASE_CA_CERT) },
     // Local dev syncs the schema directly; production applies committed migrations on boot.
     push: process.env.NODE_ENV !== 'production',
     prodMigrations: migrations,
