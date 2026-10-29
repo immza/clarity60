@@ -26,7 +26,8 @@ export const Media: CollectionConfig = {
   },
   upload: {
     // Local disk in development; Supabase Storage + ImageKit in production (see payload.config.ts).
-    staticDir: 'media',
+    // MEDIA_DIR lets tests use a throwaway folder instead of the development one.
+    staticDir: process.env.MEDIA_DIR || 'media',
     mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'video/mp4', 'video/webm'],
     adminThumbnail: 'thumbnail',
     imageSizes: [{ name: 'thumbnail', width: 400, height: 300, position: 'centre' }],
