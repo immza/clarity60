@@ -45,8 +45,11 @@ jobs:
 
       - name: Check the restored data
         run: |
-          q() { docker run --rm --network host postgres:17 psql -At postgresql://postgres:drill@localhost:5432/drill -c "$1"; }
-          echo "articles: $(q 'select count(*) from articles')"
-          echo "sections: $(q 'select count(*) from sections')"
-          echo "staff:    $(q 'select count(*) from users')"
+          set -euo pipefail
+          q() { docker run --rm --network host postgres:17 psql -v ON_ERROR_STOP=1 -At postgresql://postgres:drill@localhost:5432/drill -c "$1"; }
+          for table in articles sections categories users; do
+            count=$(q "select count(*) from $table")   # fails the drill if the table is missing
+            echo "$table: $count"
+          done
           test "$(q 'select count(*) from sections')" -gt 0
+          test "$(q 'select count(*) from users')" -gt 0

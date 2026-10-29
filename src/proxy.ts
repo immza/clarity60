@@ -11,6 +11,17 @@ const AUTH_WINDOW_MS = 10 * 60_000
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // One canonical host: www.clarity60.com → clarity60.com (path and query kept).
+  const host = request.headers.get('host') ?? ''
+  if (host.startsWith('www.')) {
+    const url = request.nextUrl.clone()
+    url.host = host.slice(4)
+    url.port = ''
+    // TLS ends at the edge, so the app sees http; always send readers to https in production.
+    if (process.env.NODE_ENV === 'production') url.protocol = 'https:'
+    return NextResponse.redirect(url, 308)
+  }
+
   if (request.method === 'POST' && AUTH_PATHS.test(pathname)) {
     const { allowed, retryAfter } = rateLimit(`auth:${clientIp(request.headers)}`, AUTH_LIMIT, AUTH_WINDOW_MS)
     if (!allowed) {

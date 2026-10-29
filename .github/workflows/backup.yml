@@ -30,11 +30,16 @@ jobs:
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
       # Sentry cron monitor (the DSN is public by design).
       SENTRY_CRON_URL: https://o4512316679520256.ingest.us.sentry.io/api/4512316688433152/cron/nightly-db-backup/1859897559c199bc447015b4ffbd9c7b/
+      # Optional: the database's CA certificate (PEM) to verify its identity, not just encrypt.
+      DATABASE_CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
+      CURL: curl -fsS --connect-timeout 10 --max-time 20
     steps:
       - name: Check in with Sentry (creates the monitor on first run)
         run: |
-          curl -fsS -X POST "$SENTRY_CRON_URL" -H 'Content-Type: application/json' \
-            --data '{"status":"in_progress","monitor_config":{"schedule":{"type":"crontab","value":"17 3 * * *"},"timezone":"UTC","checkin_margin":60,"max_runtime":30,"failure_issue_threshold":1}}' || true
+          CHECK_IN_ID=$(uuidgen)
+          echo "CHECK_IN_ID=$CHECK_IN_ID" >> "$GITHUB_ENV"
+          $CURL -X POST "$SENTRY_CRON_URL" -H 'Content-Type: application/json' \
+            --data "{\"check_in_id\":\"$CHECK_IN_ID\",\"status\":\"in_progress\",\"monitor_config\":{\"schedule\":{\"type\":\"crontab\",\"value\":\"17 3 * * *\"},\"timezone\":\"UTC\",\"checkin_margin\":60,\"max_runtime\":30,\"failure_issue_threshold\":1}}" || true
 
       - name: Check secrets
         run: |
@@ -44,8 +49,14 @@ jobs:
 
       - name: Dump (pg_dump 17, matching the server)
         run: |
-          # TLS required for the connection to Supabase.
-          docker run --rm -e PGCONNECT_TIMEOUT=30 -e PGSSLMODE=require postgres:17 \
+          # TLS always; certificate-verified (verify-full) when DATABASE_CA_CERT is set.
+          if [ -n "$DATABASE_CA_CERT" ]; then
+            printf '%s\n' "$DATABASE_CA_CERT" > ca.pem
+            TLS=(-e PGSSLMODE=verify-full -e PGSSLROOTCERT=/certs/ca.pem -v "$PWD/ca.pem:/certs/ca.pem:ro")
+          else
+            TLS=(-e PGSSLMODE=require)
+          fi
+          docker run --rm -e PGCONNECT_TIMEOUT=30 "${TLS[@]}" postgres:17 \
             pg_dump --format=custom --no-owner --no-privileges --schema=public "$DATABASE_URL" > db.dump
           test -s db.dump
           ls -lh db.dump
@@ -66,8 +77,8 @@ jobs:
 
       - name: Report success to Sentry
         if: success()
-        run: curl -fsS "${SENTRY_CRON_URL}?status=ok" || true
+        run: $CURL "${SENTRY_CRON_URL}?check_in_id=${CHECK_IN_ID}&status=ok" || true
 
       - name: Report failure to Sentry
         if: failure()
-        run: curl -fsS "${SENTRY_CRON_URL}?status=error" || true
+        run: $CURL "${SENTRY_CRON_URL}?check_in_id=${CHECK_IN_ID}&status=error" || true

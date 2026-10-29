@@ -96,7 +96,12 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
-    pool: { connectionString: process.env.DATABASE_URL || '' },
+    pool: {
+      connectionString: process.env.DATABASE_URL || '',
+      // With the provider's CA certificate (DATABASE_CA_CERT, PEM text), the database's identity is
+      // verified, not just encrypted. Without it, the connection string's sslmode applies.
+      ...(process.env.DATABASE_CA_CERT ? { ssl: { ca: process.env.DATABASE_CA_CERT, rejectUnauthorized: true } } : {}),
+    },
     // Local dev syncs the schema directly; production applies committed migrations on boot.
     push: process.env.NODE_ENV !== 'production',
     prodMigrations: migrations,
