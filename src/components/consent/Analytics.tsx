@@ -12,8 +12,9 @@ export function Analytics() {
   return (
     <>
       <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`} strategy="afterInteractive" />
+      {/* Search pages report as plain /search, so readers' search words never reach Google. */}
       <Script id="ga4-init" strategy="afterInteractive">
-        {`gtag('js', new Date()); gtag('config', ${JSON.stringify(id)}, { anonymize_ip: true });`}
+        {`gtag('js', new Date()); gtag('config', ${JSON.stringify(id)}, Object.assign({ anonymize_ip: true }, location.pathname === '/search' ? { page_location: location.origin + '/search', page_title: 'Search' } : {}));`}
       </Script>
       <ConsentBanner />
     </>

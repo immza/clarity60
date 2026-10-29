@@ -76,3 +76,21 @@ export const tidyUploadName = (name: string, mimeType: string) => {
   const slug = slugify(base) || 'image'
   return ext ? `${slug}.${ext}` : slug
 }
+
+export const MAX_QUERY_LENGTH = 100
+const MAX_SEARCH_TERMS = 6
+
+/**
+ * Splits a reader's search query into words. Only letters, numbers, apostrophes and
+ * hyphens survive, which also strips the SQL wildcards % and _. Capped so a long paste
+ * cannot become an expensive query.
+ */
+export const searchTerms = (q: string | undefined | null): string[] => {
+  const words = (q ?? '')
+    .slice(0, MAX_QUERY_LENGTH)
+    .replace(/[^\p{L}\p{N}'’-]+/gu, ' ')
+    .split(' ')
+    .map((w) => w.replace(/^['’-]+|['’-]+$/g, '').toLowerCase())
+    .filter((w) => w.length > 0)
+  return [...new Set(words)].slice(0, MAX_SEARCH_TERMS)
+}

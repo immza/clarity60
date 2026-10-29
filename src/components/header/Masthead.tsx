@@ -14,6 +14,7 @@ import { idOf } from '@/lib/relations'
 import { EditionToggle } from './EditionToggle'
 import { LastUpdated } from './LastUpdated'
 import { NavLinks, type NavItem } from './NavLinks'
+import { SearchToggle } from './SearchToggle'
 import { SideNav, type SideNavGroup } from './SideNav'
 import './masthead.css'
 
@@ -128,8 +129,9 @@ export async function Masthead({ variant }: { variant: 'front' | 'compact' }) {
             <SideNav groups={groups} extras={extras} />
           </div>
           <LastUpdated iso={lastUpdated} />
-          {/* Right group: edition stamp now; sign-in and search slot in here later. */}
+          {/* Right group: search, edition stamp; sign-in slots in after the stamp later. */}
           <div className="masthead__top-right">
+            <SearchToggle />
             <EditionToggle />
           </div>
         </div>
