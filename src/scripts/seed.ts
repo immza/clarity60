@@ -134,5 +134,20 @@ for (const tpl of PAGE_TEMPLATES) {
   payload.logger.info(`seed: page /${tpl.slug}`)
 }
 
+// First Super Admin, created before the site is ever reachable (see docs/LAUNCH.md).
+// Only when no staff exist yet; the password must be changed and 2FA set up on first login.
+const adminEmail = process.env.SEED_ADMIN_EMAIL
+const adminPassword = process.env.SEED_ADMIN_PASSWORD
+if (adminEmail && adminPassword) {
+  const { totalDocs } = await payload.count({ collection: 'users' })
+  if (totalDocs === 0) {
+    await payload.create({
+      collection: 'users',
+      data: { email: adminEmail, password: adminPassword, name: process.env.SEED_ADMIN_NAME || 'Super Admin', role: 'super-admin' },
+    })
+    payload.logger.info(`seed: created Super Admin ${adminEmail}`)
+  }
+}
+
 payload.logger.info('seed: done')
 process.exit(0)

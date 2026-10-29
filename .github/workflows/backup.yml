@@ -2,8 +2,12 @@ name: Nightly database backup
 
 # Encrypted pg_dump of the production database, kept 30 days as a workflow artifact.
 # Artifacts on a public repo are downloadable by any GitHub user, so the dump is
-# encrypted (AES-256, PBKDF2) with BACKUP_PASSPHRASE before upload. Restore steps:
-# scripts/restore-backup.sh. Needs repo secrets BACKUP_DATABASE_URL and BACKUP_PASSPHRASE.
+# encrypted (AES-256, PBKDF2) with BACKUP_PASSPHRASE before upload. Restore: the
+# "Restore drill" workflow, or scripts/restore-backup.sh.
+# Needs repo secrets BACKUP_DATABASE_URL and BACKUP_PASSPHRASE.
+#
+# GitHub pauses scheduled workflows after 60 days without repo activity, so every run
+# checks in with a Sentry cron monitor; Sentry emails if a nightly check-in is missed.
 
 on:
   schedule:
@@ -24,7 +28,14 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      # Sentry cron monitor (the DSN is public by design).
+      SENTRY_CRON_URL: https://o4512316679520256.ingest.us.sentry.io/api/4512316688433152/cron/nightly-db-backup/1859897559c199bc447015b4ffbd9c7b/
     steps:
+      - name: Check in with Sentry (creates the monitor on first run)
+        run: |
+          curl -fsS -X POST "$SENTRY_CRON_URL" -H 'Content-Type: application/json' \
+            --data '{"status":"in_progress","monitor_config":{"schedule":{"type":"crontab","value":"17 3 * * *"},"timezone":"UTC","checkin_margin":60,"max_runtime":30,"failure_issue_threshold":1}}' || true
+
       - name: Check secrets
         run: |
           if [ -z "$DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
@@ -33,7 +44,8 @@ jobs:
 
       - name: Dump (pg_dump 17, matching the server)
         run: |
-          docker run --rm -e PGCONNECT_TIMEOUT=30 postgres:17 \
+          # TLS required for the connection to Supabase.
+          docker run --rm -e PGCONNECT_TIMEOUT=30 -e PGSSLMODE=require postgres:17 \
             pg_dump --format=custom --no-owner --no-privileges --schema=public "$DATABASE_URL" > db.dump
           test -s db.dump
           ls -lh db.dump
@@ -51,3 +63,11 @@ jobs:
           path: clarity60-*.dump.enc
           retention-days: 30
           if-no-files-found: error
+
+      - name: Report success to Sentry
+        if: success()
+        run: curl -fsS "${SENTRY_CRON_URL}?status=ok" || true
+
+      - name: Report failure to Sentry
+        if: failure()
+        run: curl -fsS "${SENTRY_CRON_URL}?status=error" || true

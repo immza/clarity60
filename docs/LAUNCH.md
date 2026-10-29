@@ -21,54 +21,75 @@ The order of steps for taking clarity60.com live. Secrets go into dashboards onl
 2. Attach that origin to the default URL endpoint. The endpoint is `https://ik.imagekit.io/<your-id>`, which is `IMAGEKIT_URL_ENDPOINT`.
    - Because media keys are stored as `media/<file>`, set the base URL to the bucket root: `.../object/public/media/` → `ik.imagekit.io/<id>/media/<file>`.
 
-## 3. DigitalOcean App Platform
+## 3. Prepare the database (from a laptop, before the app ever runs)
+
+The first Super Admin is created now, so the app never boots with an open "create first user" page.
+
+```bash
+export DATABASE_URL='<session pooler string>'
+export PAYLOAD_SECRET='<the production secret>'   # generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+export NODE_ENV=production DISABLE_JOBS=true
+npm run migrate
+SEED_ADMIN_EMAIL='you@example.com' SEED_ADMIN_PASSWORD='<long unique password>' SEED_ADMIN_NAME='Your Name' npm run seed
+```
+
+- This creates the tables, sections, categories, ad slots, standard pages and the Super Admin.
+- Store `PAYLOAD_SECRET` in a password manager; the app uses the same value.
+- **Never run `seed:demo` against production.**
+
+## 4. DigitalOcean App Platform
 
 1. Go to **Create App** → **GitHub** → `immza/clarity60`, branch `main`.
-2. Use the spec in `.do/app.yaml`. You can paste it under App Spec.
-   - It sets region `sfo` and the $10 1 GiB instance, health check at `/healthz`.
-3. Fill in every env var marked `SECRET` in the spec.
-   - `PAYLOAD_SECRET`: generate it with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Store it in a password manager too.
+2. Use the spec in `.do/app.yaml` (paste it under App Spec).
+   - It sets region `sfo`, the $10 1 GiB instance, a health check at `/healthz`, and alerts.
+   - It deliberately adds **no custom domains**; see step 5.
+3. Fill in every env var marked `SECRET` in the spec. `PAYLOAD_SECRET` must be the same value used in step 3.
 4. Deploy.
-   - The first boot applies the database migration automatically.
-   - **Check:** `https://<app>.ondigitalocean.app/healthz` should return `{"ok":true}`.
-5. Seed the structure. From a laptop, with `DATABASE_URL` pointing at Supabase:
-   `NODE_ENV=production DISABLE_JOBS=true npm run seed`
-   - This creates sections, categories, ad slots and the standard pages.
-   - **Never run `seed:demo` against production.**
+   - **Check:** `https://<app>.ondigitalocean.app/healthz` returns `{"ok":true}`.
+   - Log in at `https://<app>.ondigitalocean.app/admin` and set up 2FA right away.
 
-## 4. Cloudflare
+## 5. Cloudflare
 
 1. **DNS:**
-   - Replace the Namecheap parking **A** record and the `www` **CNAME** with DigitalOcean's records for the app's custom domains.
-   - Use CNAMEs to `<app>.ondigitalocean.app`. CNAME flattening handles the apex.
-   - Keep all of them **Proxied** (orange cloud).
+   - Replace the Namecheap parking **A** record and the `www` **CNAME**.
+   - New records: `clarity60.com` **CNAME** `<app>.ondigitalocean.app`, and `www` **CNAME** `clarity60.com`.
+   - Keep both **Proxied** (orange cloud).
+   - **Do not add the domain inside App Platform**: with Cloudflare proxying, that breaks DigitalOcean's certificate renewal.
 2. **SSL/TLS:**
    - Mode: **Full (strict)**.
    - Turn on **Always Use HTTPS**.
    - Set minimum TLS to **1.2**.
-3. **Rules → Redirect Rules:** `www.clarity60.com/*` → `https://clarity60.com/$1` (301).
-4. **Security → WAF → Rate limiting** (the free plan allows 1 rule):
-   - path `/api/users/login`, 10 requests per 10 seconds per IP → Block.
-5. **Caching:**
+3. **Test it:** `https://clarity60.com/healthz` should return `{"ok":true}`.
+   - **If it returns a 403/404 or error page:** DigitalOcean is not accepting the proxied hostname. Use the fallback:
+     1. Add `clarity60.com` as a custom domain in App Platform.
+     2. Set the Cloudflare record to **DNS only** (grey cloud) so App Platform can issue its certificate.
+     3. Leave it grey: App Platform's own CDN and DDoS protection then front the site, and Cloudflare provides DNS and email only.
+     4. Skip the rate-limit and redirect rules below. The in-app login limit still applies.
+4. **Rules → Redirect Rules** → Create:
+   - When the hostname equals `www.clarity60.com`, do a **Dynamic** redirect to `concat("https://clarity60.com", http.request.uri.path)`.
+   - Status **301**, **preserve query string** on.
+5. **Security → WAF → Rate limiting** (the free plan allows 1 rule):
+   - URI path equals `/api/users/login`, 10 requests per 10 seconds per IP → Block.
+6. **Caching:**
    - Leave the defaults; the app sends its own cache headers.
    - **Do not** cache `/admin*` or `/api/*`.
-6. **Email Routing** (optional): `hello@` → Gmail.
+7. **Email Routing** (optional): `hello@` → Gmail.
 
-## 5. After first deploy
+## 6. After going live
 
-1. Create the first Super Admin at `/admin` and set up 2FA. Save the authenticator backup.
-2. In Admin → **Authors**, create your author profile with name, bio, credentials and photo.
-3. Upload one image and confirm it loads from `ik.imagekit.io`.
-4. Publish the launch articles: aim for 10–15.
-5. **Google Search Console:**
+1. In Admin → **Authors**, create your author profile with name, bio, credentials and photo.
+2. Upload one image and confirm it loads from `ik.imagekit.io`.
+3. Publish the launch articles: aim for 10–15.
+4. **Google Search Console:**
    - Add the domain property. Verification is a Cloudflare DNS TXT record.
    - Submit `/sitemap.xml` and `/news-sitemap.xml`.
-6. **Bing Webmaster Tools:** import from Search Console. Optionally set `INDEXNOW_KEY`.
-7. **Backups:**
+5. **Bing Webmaster Tools:** import from Search Console. Optionally set `INDEXNOW_KEY`.
+6. **Backups:**
    - Add the GitHub repo secrets `BACKUP_DATABASE_URL` (the session pooler string) and `BACKUP_PASSPHRASE`. Keep the passphrase in a password manager; without it, backups cannot be read.
    - Run the workflow once by hand: Actions → Nightly database backup → Run.
-   - **Restore drill:** restore the artifact into a scratch database with `scripts/restore-backup.sh` and check the article count matches.
-8. **Sentry:** trigger nothing on purpose. Watch Issues for the first day.
+   - Then run **Actions → Restore drill → Run**. It restores the newest backup into a throwaway database and prints the article count. Repeat monthly.
+   - Each run checks in with Sentry's **Crons** monitor `nightly-db-backup`. If GitHub ever pauses the schedule (it does after 60 days with no repo activity), Sentry emails about the missed run.
+7. **Sentry:** trigger nothing on purpose. Watch Issues for the first day.
 
 ## Later
 

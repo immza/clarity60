@@ -41,6 +41,7 @@ services:
       - { key: NEXT_PUBLIC_SENTRY_DSN, value: "https://1859897559c199bc447015b4ffbd9c7b@o4512316679520256.ingest.us.sentry.io/4512316688433152", scope: RUN_AND_BUILD_TIME }
       - { key: S3_REGION, value: us-west-2, scope: RUN_AND_BUILD_TIME }
       - { key: S3_BUCKET, value: media, scope: RUN_AND_BUILD_TIME }
+      - { key: RATE_LIMIT_IP_HEADER, value: do-connecting-ip, scope: RUN_TIME }  # set by DigitalOcean, not spoofable
       # --- set in dashboard (type SECRET) ---
       - { key: DATABASE_URL, scope: RUN_AND_BUILD_TIME, type: SECRET }        # Supabase session pooler, port 5432
       - { key: PAYLOAD_SECRET, scope: RUN_AND_BUILD_TIME, type: SECRET }      # 64 random hex chars
@@ -52,8 +53,7 @@ services:
       - { key: INDEXNOW_KEY, scope: RUN_TIME, type: SECRET }                  # optional
       - { key: NEXT_PUBLIC_GA_ID, scope: RUN_AND_BUILD_TIME }                  # optional, when GA4 is ready
 
-domains:
-  - domain: clarity60.com
-    type: PRIMARY
-  - domain: www.clarity60.com
-    type: ALIAS
+# No custom domains here: Cloudflare proxies clarity60.com to the app's default
+# <app>.ondigitalocean.app hostname. Adding the domain to App Platform while Cloudflare
+# proxies it breaks certificate renewal (DigitalOcean docs, "Configure an external CDN").
+# Fallback if the proxied setup fails on launch day: see docs/LAUNCH.md §4.

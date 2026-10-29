@@ -36,6 +36,15 @@ const dirname = path.dirname(filename)
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
+// Production media storage is all-or-nothing: a half-configured setup would store files
+// that can't be served (or fail every upload), so refuse to boot instead.
+const STORAGE_VARS = ['S3_BUCKET', 'S3_ENDPOINT', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY', 'IMAGEKIT_URL_ENDPOINT']
+const storageEnabled = Boolean(process.env.S3_BUCKET)
+if (storageEnabled) {
+  const missing = STORAGE_VARS.filter((key) => !process.env[key])
+  if (missing.length) throw new Error(`Media storage is enabled (S3_BUCKET is set) but missing: ${missing.join(', ')}`)
+}
+
 /** Public cache tags each collection's changes should clear. */
 const CACHE_TAGS: Partial<Record<string, string[]>> = {
   articles: [TAGS.articles],
@@ -115,7 +124,9 @@ export default buildConfig({
     // Production media: Supabase Storage (S3 API) as the store, ImageKit in front for delivery.
     // Off unless S3_BUCKET is set, so local development keeps using ./media.
     s3Storage({
-      enabled: Boolean(process.env.S3_BUCKET),
+      enabled: storageEnabled,
+      // Same media columns whether or not storage is on, so one migration fits every environment.
+      alwaysInsertFields: true,
       bucket: process.env.S3_BUCKET || '',
       collections: {
         media: {

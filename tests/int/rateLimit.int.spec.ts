@@ -13,8 +13,9 @@ describe('rate limiter', () => {
     expect(rateLimit(key, 3, 60_000, t0 + 60_001).allowed).toBe(true)
   })
 
-  it('keys by the Cloudflare visitor IP when present', () => {
-    expect(clientIp(new Headers({ 'cf-connecting-ip': '1.2.3.4', 'x-forwarded-for': '9.9.9.9' }))).toBe('1.2.3.4')
-    expect(clientIp(new Headers({ 'x-forwarded-for': '5.6.7.8, 10.0.0.1' }))).toBe('5.6.7.8')
+  it('keys only by the platform-set header and ignores client-supplied forwarding headers', () => {
+    expect(clientIp(new Headers({ 'do-connecting-ip': '1.2.3.4', 'x-forwarded-for': '9.9.9.9' }))).toBe('1.2.3.4')
+    expect(clientIp(new Headers({ 'x-forwarded-for': '5.6.7.8', 'cf-connecting-ip': '6.6.6.6' }))).toBe('unknown')
+    expect(clientIp(new Headers({ 'cf-connecting-ip': '7.7.7.7' }), 'cf-connecting-ip')).toBe('7.7.7.7')
   })
 })

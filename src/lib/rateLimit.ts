@@ -24,6 +24,11 @@ export const rateLimit = (key: string, limit: number, windowMs: number, now = Da
     : { allowed: true, retryAfter: 0 }
 }
 
-/** The real visitor IP: Cloudflare sets cf-connecting-ip; fall back for local/dev. */
-export const clientIp = (headers: Headers) =>
-  headers.get('cf-connecting-ip') ?? headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+/**
+ * The visitor IP for rate limiting, read only from the one header our hosting platform
+ * sets itself (and overwrites if a client sends it). Client-controlled headers such as
+ * x-forwarded-for are never trusted. Configure with RATE_LIMIT_IP_HEADER; DigitalOcean
+ * App Platform sets do-connecting-ip. Without it, all requests share one bucket.
+ */
+export const clientIp = (headers: Headers, trustedHeader = process.env.RATE_LIMIT_IP_HEADER || 'do-connecting-ip') =>
+  headers.get(trustedHeader)?.trim() || 'unknown'

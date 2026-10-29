@@ -1,0 +1,52 @@
+name: Restore drill
+
+# Proves the backups work without touching production: downloads the newest backup
+# artifact, decrypts it, restores it into a throwaway Postgres 17 and counts the rows.
+# Run by hand (Actions → Restore drill → Run workflow), e.g. once a month.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      scratch:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: drill
+          POSTGRES_DB: drill
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Download the newest backup
+        run: |
+          RUN_ID=$(gh run list -R "$GITHUB_REPOSITORY" --workflow backup.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          test -n "$RUN_ID" || { echo "::error::No successful backup run found"; exit 1; }
+          gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" --dir backup
+          ls -lR backup
+
+      - name: Decrypt and restore into the scratch database
+        run: |
+          FILE=$(find backup -name '*.dump.enc' | head -1)
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$FILE" -out db.dump -pass env:BACKUP_PASSPHRASE
+          docker run --rm --network host -v "$PWD:/b" postgres:17 \
+            pg_restore --no-owner --no-privileges --dbname postgresql://postgres:drill@localhost:5432/drill /b/db.dump
+
+      - name: Check the restored data
+        run: |
+          q() { docker run --rm --network host postgres:17 psql -At postgresql://postgres:drill@localhost:5432/drill -c "$1"; }
+          echo "articles: $(q 'select count(*) from articles')"
+          echo "sections: $(q 'select count(*) from sections')"
+          echo "staff:    $(q 'select count(*) from users')"
+          test "$(q 'select count(*) from sections')" -gt 0
