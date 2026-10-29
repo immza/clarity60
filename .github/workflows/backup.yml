@@ -4,7 +4,7 @@ name: Nightly database backup
 # Artifacts on a public repo are downloadable by any GitHub user, so the dump is
 # encrypted (AES-256, PBKDF2) with BACKUP_PASSPHRASE before upload. Restore: the
 # "Restore drill" workflow, or scripts/restore-backup.sh.
-# Needs repo secrets BACKUP_DATABASE_URL and BACKUP_PASSPHRASE.
+# Needs repo secrets BACKUP_DATABASE_URL, BACKUP_PASSPHRASE and DATABASE_CA_CERT.
 #
 # GitHub pauses scheduled workflows after 60 days without repo activity, so every run
 # checks in with a Sentry cron monitor; Sentry emails if a nightly check-in is missed.
@@ -30,7 +30,7 @@ jobs:
       BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
       # Sentry cron monitor (the DSN is public by design).
       SENTRY_CRON_URL: https://o4512316679520256.ingest.us.sentry.io/api/4512316688433152/cron/nightly-db-backup/1859897559c199bc447015b4ffbd9c7b/
-      # Optional: the database's CA certificate (PEM) to verify its identity, not just encrypt.
+      # The database's CA certificate (PEM): the backup verifies who it is talking to.
       DATABASE_CA_CERT: ${{ secrets.DATABASE_CA_CERT }}
       CURL: curl -fsS --connect-timeout 10 --max-time 20
     steps:
@@ -43,20 +43,16 @@ jobs:
 
       - name: Check secrets
         run: |
-          if [ -z "$DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
-            echo "::error::BACKUP_DATABASE_URL and BACKUP_PASSPHRASE secrets are required"; exit 1
+          if [ -z "$DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ] || [ -z "$DATABASE_CA_CERT" ]; then
+            echo "::error::BACKUP_DATABASE_URL, BACKUP_PASSPHRASE and DATABASE_CA_CERT secrets are required"; exit 1
           fi
 
       - name: Dump (pg_dump 17, matching the server)
         run: |
-          # TLS always; certificate-verified (verify-full) when DATABASE_CA_CERT is set.
-          if [ -n "$DATABASE_CA_CERT" ]; then
-            printf '%s\n' "$DATABASE_CA_CERT" > ca.pem
-            TLS=(-e PGSSLMODE=verify-full -e PGSSLROOTCERT=/certs/ca.pem -v "$PWD/ca.pem:/certs/ca.pem:ro")
-          else
-            TLS=(-e PGSSLMODE=require)
-          fi
-          docker run --rm -e PGCONNECT_TIMEOUT=30 "${TLS[@]}" postgres:17 \
+          # Certificate-verified TLS (verify-full) to the database.
+          printf '%s\n' "$DATABASE_CA_CERT" > ca.pem
+          docker run --rm -e PGCONNECT_TIMEOUT=30 -e PGSSLMODE=verify-full -e PGSSLROOTCERT=/certs/ca.pem \
+            -v "$PWD/ca.pem:/certs/ca.pem:ro" postgres:17 \
             pg_dump --format=custom --no-owner --no-privileges --schema=public "$DATABASE_URL" > db.dump
           test -s db.dump
           ls -lh db.dump

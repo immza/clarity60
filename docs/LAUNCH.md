@@ -10,8 +10,9 @@ The order of steps for taking clarity60.com live. Secrets go into dashboards onl
    - This is `DATABASE_URL`.
 2. **Media bucket.** Go to Storage → **New bucket**, name it `media`, and make it **Public**.
    - Public read is what lets ImageKit fetch the originals. Uploads still need the S3 keys.
-3. **Optional, recommended: database certificate.** Go to Database → Settings → **SSL Configuration** → download the CA certificate.
-   - Its full PEM text becomes `DATABASE_CA_CERT` (DigitalOcean) and the `DATABASE_CA_CERT` GitHub secret (backups), so connections verify the database's identity, not just encrypt.
+3. **Database certificate (required).** Go to Database → Settings → **SSL Configuration** → download the CA certificate (e.g. `prod-ca-2021.crt`).
+   - Its full text becomes `DATABASE_CA_CERT` in DigitalOcean and the `DATABASE_CA_CERT` GitHub secret.
+   - The app, seed, backups and restore all refuse to connect to a remote database without it, so traffic is always encrypted and the database's identity is checked.
 4. **S3 keys.** Go to Storage → Settings → **S3 Connection**.
    - Copy the **endpoint**. This is `S3_ENDPOINT`.
    - Create an **access key**. This gives you `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`.
@@ -29,6 +30,7 @@ The first Super Admin is created now, so the app never boots with an open "creat
 
 ```bash
 export DATABASE_URL='<session pooler string>'
+export DATABASE_CA_CERT="$(cat ~/Downloads/prod-ca-2021.crt)"   # the certificate from §1.3
 export PAYLOAD_SECRET='<the production secret>'   # generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 export NODE_ENV=production DISABLE_JOBS=true
 npm run migrate
@@ -89,9 +91,8 @@ SEED_ADMIN_EMAIL='you@example.com' SEED_ADMIN_PASSWORD='<long unique password>' 
    - Submit `/sitemap.xml` and `/news-sitemap.xml`.
 5. **Bing Webmaster Tools:** import from Search Console. Optionally set `INDEXNOW_KEY`.
 6. **Backups:**
-   - Add the GitHub repo secrets `BACKUP_DATABASE_URL` (the session pooler string) and `BACKUP_PASSPHRASE`. Keep the passphrase in a password manager; without it, backups cannot be read.
+   - Add the GitHub repo secrets `BACKUP_DATABASE_URL` (the session pooler string), `BACKUP_PASSPHRASE` and `DATABASE_CA_CERT`. Keep the passphrase in a password manager; without it, backups cannot be read.
    - Run the workflow once by hand: Actions → Nightly database backup → Run.
-   - Optionally add the `DATABASE_CA_CERT` repo secret so backups verify the database certificate.
    - Then run **Actions → Restore drill → Run**. It restores the newest backup into a throwaway database and prints the article count. Repeat monthly.
    - Each run checks in with Sentry's **Crons** monitor `nightly-db-backup`. If GitHub ever pauses the schedule (it does after 60 days with no repo activity), Sentry emails about the missed run.
 7. **Sentry:** trigger nothing on purpose. Watch Issues for the first day.

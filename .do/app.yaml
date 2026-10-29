@@ -49,7 +49,7 @@ services:
       - { key: S3_ACCESS_KEY_ID, scope: RUN_AND_BUILD_TIME, type: SECRET }
       - { key: S3_SECRET_ACCESS_KEY, scope: RUN_AND_BUILD_TIME, type: SECRET }
       - { key: IMAGEKIT_URL_ENDPOINT, scope: RUN_AND_BUILD_TIME, type: SECRET }
-      - { key: DATABASE_CA_CERT, scope: RUN_AND_BUILD_TIME, type: SECRET }    # optional: Supabase CA (PEM) for verified TLS
+      - { key: DATABASE_CA_CERT, scope: RUN_AND_BUILD_TIME, type: SECRET }    # required: Supabase CA certificate (PEM) for verified TLS
       - { key: SENTRY_AUTH_TOKEN, scope: BUILD_TIME, type: SECRET }           # optional: readable stack traces
       - { key: INDEXNOW_KEY, scope: RUN_TIME, type: SECRET }                  # optional
       - { key: NEXT_PUBLIC_GA_ID, scope: RUN_AND_BUILD_TIME }                  # optional, when GA4 is ready

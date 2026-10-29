@@ -36,6 +36,20 @@ const dirname = path.dirname(filename)
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
+/**
+ * Any database that isn't on this machine must use certificate-verified TLS: the
+ * provider's CA (DATABASE_CA_CERT, PEM text) is required, and the server's identity is
+ * checked. Local databases (dev, tests, CI) connect without TLS.
+ */
+const databaseUrl = process.env.DATABASE_URL || ''
+const databaseTls = () => {
+  const isLocal = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(databaseUrl)
+  if (isLocal || !databaseUrl) return {}
+  const ca = process.env.DATABASE_CA_CERT
+  if (!ca) throw new Error('DATABASE_CA_CERT is required for a remote database (see docs/LAUNCH.md §1).')
+  return { ssl: { ca, rejectUnauthorized: true } }
+}
+
 // Production media storage is all-or-nothing: a half-configured setup would store files
 // that can't be served (or fail every upload), so refuse to boot instead.
 const STORAGE_VARS = ['S3_BUCKET', 'S3_ENDPOINT', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY', 'IMAGEKIT_URL_ENDPOINT']
@@ -96,12 +110,7 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
-    pool: {
-      connectionString: process.env.DATABASE_URL || '',
-      // With the provider's CA certificate (DATABASE_CA_CERT, PEM text), the database's identity is
-      // verified, not just encrypted. Without it, the connection string's sslmode applies.
-      ...(process.env.DATABASE_CA_CERT ? { ssl: { ca: process.env.DATABASE_CA_CERT, rejectUnauthorized: true } } : {}),
-    },
+    pool: { connectionString: databaseUrl, ...databaseTls() },
     // Local dev syncs the schema directly; production applies committed migrations on boot.
     push: process.env.NODE_ENV !== 'production',
     prodMigrations: migrations,
