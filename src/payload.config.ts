@@ -1,6 +1,7 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { redirectsPlugin } from '@payloadcms/plugin-redirects'
 import { seoPlugin } from '@payloadcms/plugin-seo'
+import { s3Storage } from '@payloadcms/storage-s3'
 import path from 'path'
 import type { CollectionConfig } from 'payload'
 import { buildConfig } from 'payload'
@@ -111,6 +112,29 @@ export default buildConfig({
     shouldAutoRun: () => process.env.DISABLE_JOBS !== 'true',
   },
   plugins: [
+    // Production media: Supabase Storage (S3 API) as the store, ImageKit in front for delivery.
+    // Off unless S3_BUCKET is set, so local development keeps using ./media.
+    s3Storage({
+      enabled: Boolean(process.env.S3_BUCKET),
+      bucket: process.env.S3_BUCKET || '',
+      collections: {
+        media: {
+          prefix: 'media',
+          disablePayloadAccessControl: true,
+          generateFileURL: ({ filename, prefix }) =>
+            `${(process.env.IMAGEKIT_URL_ENDPOINT || '').replace(/\/$/, '')}/${prefix ? `${prefix}/` : ''}${filename}`,
+        },
+      },
+      config: {
+        endpoint: process.env.S3_ENDPOINT,
+        region: process.env.S3_REGION || 'us-west-2',
+        forcePathStyle: true,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+        },
+      },
+    }),
     seoPlugin({
       collections: ['articles', 'pages'],
       uploadsCollection: 'media',
