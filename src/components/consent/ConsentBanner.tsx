@@ -41,7 +41,8 @@ export function ConsentBanner() {
     } catch {
       // Blocked storage: the choice still applies for this visit.
     }
-    window.gtag?.('consent', 'update', consentUpdate(granted))
+    const gpc = (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true
+    window.gtag?.('consent', 'update', consentUpdate(granted, gpc))
     setOpen(false)
   }
 
@@ -66,11 +67,21 @@ export function ConsentBanner() {
   )
 }
 
-/** Footer link that reopens the banner so readers can change their mind. */
-export function CookieSettingsLink() {
+/**
+ * "Privacy choices" footer link on every page. With analytics/ads configured it reopens the
+ * consent banner; without them there is nothing to choose, so it links to the Cookie Policy.
+ */
+export function PrivacyChoicesLink({ hasConsentBanner }: { hasConsentBanner: boolean }) {
+  if (!hasConsentBanner) {
+    return (
+      <Link href="/cookies" prefetch={false}>
+        Privacy choices
+      </Link>
+    )
+  }
   return (
     <button type="button" className="footer__linkbtn" onClick={() => window.dispatchEvent(new Event(CONSENT_EVENT))}>
-      Cookie settings
+      Privacy choices
     </button>
   )
 }

@@ -1,14 +1,16 @@
 import Link from 'next/link'
 
-import { CookieSettingsLink } from '@/components/consent/ConsentBanner'
-import { getLatestCorrection } from '@/lib/data'
+import { PrivacyChoicesLink } from '@/components/consent/ConsentBanner'
+import { getLatestCorrection, getPublishedPageSlugs } from '@/lib/data'
 
 import './footer.css'
 
 const LINKS = [
   { label: 'About', href: '/about' },
+  { label: 'Editorial Standards', href: '/editorial-standards' },
   { label: 'Corrections', href: '/corrections' },
   { label: 'Advertise', href: '/advertise' },
+  { label: 'Ad & Affiliate Disclosure', href: '/advertising-disclosure' },
   { label: 'Contact', href: '/contact' },
   { label: 'Privacy', href: '/privacy' },
   { label: 'Cookies', href: '/cookies' },
@@ -16,7 +18,10 @@ const LINKS = [
 ]
 
 export async function Footer() {
-  const correction = await getLatestCorrection()
+  const pageLinks = LINKS.filter((l) => l.href !== '/corrections').map((l) => l.href.slice(1))
+  const [correction, pageSlugs] = await Promise.all([getLatestCorrection(), getPublishedPageSlugs(pageLinks)])
+  // Page links appear only once that page is published; /corrections is a built-in route.
+  const links = LINKS.filter((l) => l.href === '/corrections' || pageSlugs.includes(l.href.slice(1)))
 
   return (
     <footer className="footer">
@@ -44,18 +49,16 @@ export async function Footer() {
           <div className="footer__meta">
             <p>© {new Date().getFullYear()} Clarity60 · clarity60.com</p>
             <ul className="footer__links">
-              {LINKS.map((l) => (
+              {links.map((l) => (
                 <li key={l.href}>
                   <Link href={l.href} prefetch={false}>
                     {l.label}
                   </Link>
                 </li>
               ))}
-              {process.env.NEXT_PUBLIC_GA_ID && (
-                <li>
-                  <CookieSettingsLink />
-                </li>
-              )}
+              <li>
+                <PrivacyChoicesLink hasConsentBanner={Boolean(process.env.NEXT_PUBLIC_GA_ID)} />
+              </li>
             </ul>
           </div>
         </div>
