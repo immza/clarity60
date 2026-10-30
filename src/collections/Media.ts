@@ -7,7 +7,12 @@ import { tidyUploadName } from '@/lib/text'
 
 export const Media: CollectionConfig = {
   slug: 'media',
-  admin: { defaultColumns: ['filename', 'alt', 'credit', 'license'], group: 'Content' },
+  admin: {
+    defaultColumns: ['filename', 'alt', 'credit', 'license'],
+    group: 'Content',
+    description:
+      'Upload sharp originals: JPG, PNG or WebP, at least 1200px wide (Google Discover and News show large previews only for images that wide). Don’t shrink files yourself: the site converts every image to WebP/AVIF and resizes it for each screen, so readers get small, fast files automatically.',
+  },
   access: { read: anyone, create: staffOnly, update: staffOnly, delete: editorsOnly },
   custom: { totp: { disableAccessWrapper: { read: true } } },
   hooks: {
