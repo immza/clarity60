@@ -97,7 +97,7 @@ export async function ArticleView({ article }: { article: Article }) {
     listArticles({ categoryIds: [category.id], excludeIds: [article.id], limit: 4 }),
     getSiteSettings(),
   ])
-  const faq = faqSchema(article, settings)
+  const faq = faqSchema({ body: article.body, path: article.path ?? '/' }, settings)
 
   const sponsor = article.sponsorship?.isSponsored ? article.sponsorship : null
   const slotContext = { sectionId: section.id, categoryIds: [category.id, ...(parent ? [parent.id] : [])] }

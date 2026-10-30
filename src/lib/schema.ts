@@ -27,7 +27,7 @@ export const organization = (settings?: SchemaSettings | null) => {
     '@id': `${SITE_URL}/#organization`,
     name: 'Clarity60',
     url: SITE_URL,
-    logo: { '@type': 'ImageObject', url: absolute('/icon.png'), width: 512, height: 512 },
+    logo: { '@type': 'ImageObject', url: absolute('/logo.png'), width: 512, height: 512 },
     ...(socials.length ? { sameAs: socials } : {}),
     ...(email
       ? { email, contactPoint: { '@type': 'ContactPoint', contactType: 'editorial', email, url: absolute('/contact') } }
@@ -57,7 +57,9 @@ export const imageObject = (media: Media) => {
     url: absolute(media.url!),
     ...(media.width && media.height ? { width: media.width, height: media.height } : {}),
     ...(media.caption ? { caption: media.caption } : {}),
-    ...(media.credit ? { creditText: media.credit, copyrightNotice: media.credit } : {}),
+    ...(media.credit ? { creditText: media.credit } : {}),
+    // Only our own work carries our copyright; a credit like "Canva" is not a copyright holder.
+    ...(media.license === 'own' ? { copyrightNotice: '© Clarity60' } : {}),
     ...license,
   }
 }
@@ -178,15 +180,18 @@ export const faqItems = (body: Article['body'] | null | undefined) => {
   return items
 }
 
-/** FAQPage for an article's FAQ blocks, or null if it has none or it is switched off in Site Settings. */
-export const faqSchema = (article: Article, settings?: SchemaSettings | null) => {
+/**
+ * FAQPage for the FAQ blocks in an article or page body, or null if there are none or
+ * it is switched off in Site Settings.
+ */
+export const faqSchema = (doc: { body?: Article['body'] | null; path: string }, settings?: SchemaSettings | null) => {
   if (settings?.faqSchema === false) return null
-  const items = faqItems(article.body)
+  const items = faqItems(doc.body)
   if (!items.length) return null
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    '@id': `${absolute(article.path ?? '/')}#faq`,
+    '@id': `${absolute(doc.path)}#faq`,
     mainEntity: items.map((i) => ({ '@type': 'Question', name: i.question, acceptedAnswer: { '@type': 'Answer', text: i.answer } })),
   }
 }

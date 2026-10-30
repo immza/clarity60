@@ -45,8 +45,11 @@ describe('structured data', () => {
   })
 
   it('describes image credit and licence from the Media fields', () => {
-    expect(imageObject(media())).toMatchObject({ creditText: 'Clarity60', license: `${SITE_URL}/terms` })
-    expect(imageObject(media({ license: 'canva', credit: 'Canva' }))).not.toHaveProperty('license')
+    expect(imageObject(media())).toMatchObject({ creditText: 'Clarity60', copyrightNotice: '© Clarity60', license: `${SITE_URL}/terms` })
+    const canva = imageObject(media({ license: 'canva', credit: 'Canva' }))
+    expect(canva).toMatchObject({ creditText: 'Canva' })
+    expect(canva).not.toHaveProperty('license')
+    expect(canva).not.toHaveProperty('copyrightNotice')
   })
 
   it('adds a VideoObject only when the hero video has a poster', () => {
@@ -58,9 +61,11 @@ describe('structured data', () => {
 
   it('builds FAQPage from FAQ blocks, and can be switched off', () => {
     expect(faqItems(faqBody)).toHaveLength(2)
-    expect(faqSchema(article())?.mainEntity[0]).toMatchObject({ name: 'Why are flamingos pink?' })
-    expect(faqSchema(article(), { faqSchema: false })).toBeNull()
-    expect(faqSchema(article({ body: { root: { type: 'root', children: [] } } as unknown as Article['body'] }))).toBeNull()
+    const doc = { body: faqBody, path: '/explainers/science/flamingos' }
+    expect(faqSchema(doc)?.mainEntity[0]).toMatchObject({ name: 'Why are flamingos pink?' })
+    expect(faqSchema({ body: faqBody, path: '/about' })?.['@id']).toBe(`${SITE_URL}/about#faq`)
+    expect(faqSchema(doc, { faqSchema: false })).toBeNull()
+    expect(faqSchema({ body: { root: { type: 'root', children: [] } } as unknown as Article['body'], path: '/x' })).toBeNull()
   })
 
   it('types About and Contact pages', () => {
