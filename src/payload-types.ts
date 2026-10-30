@@ -1365,13 +1365,14 @@ export interface SiteSetting {
    */
   faqSchema?: boolean | null;
   /**
-   * Filled-in accounts are linked from the site and listed to Google as Clarity60’s official profiles.
+   * Full https:// profile links. Filled-in accounts appear in the footer (“Follow Clarity60”) and are listed to Google as Clarity60’s official profiles. Leave one empty to hide it.
    */
   socials?: {
     instagram?: string | null;
-    youtube?: string | null;
-    x?: string | null;
     facebook?: string | null;
+    youtube?: string | null;
+    tiktok?: string | null;
+    x?: string | null;
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1415,9 +1416,10 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | T
     | {
         instagram?: T;
-        youtube?: T;
-        x?: T;
         facebook?: T;
+        youtube?: T;
+        tiktok?: T;
+        x?: T;
       };
   updatedAt?: T;
   createdAt?: T;

@@ -34,6 +34,16 @@ const earField = (name: string, label: string, defaults: EarDefaults): Field => 
   ],
 })
 
+/** Social profile links must be full https:// URLs (or empty). */
+const profileUrl = (value: unknown) => {
+  if (!value) return true
+  try {
+    return new URL(String(value)).protocol === 'https:' ? true : 'Use a full https:// link.'
+  } catch {
+    return 'Use a full https:// link, e.g. https://www.tiktok.com/@theclarity60'
+  }
+}
+
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   admin: { group: 'Admin' },
@@ -106,12 +116,13 @@ export const SiteSettings: GlobalConfig = {
     {
       name: 'socials',
       type: 'group',
-      admin: { description: 'Filled-in accounts are linked from the site and listed to Google as Clarity60’s official profiles.' },
+      admin: { description: 'Full https:// profile links. Filled-in accounts appear in the footer (“Follow Clarity60”) and are listed to Google as Clarity60’s official profiles. Leave one empty to hide it.' },
       fields: [
-        { name: 'instagram', type: 'text', defaultValue: 'https://www.instagram.com/theclarity60/' },
-        { name: 'youtube', type: 'text' },
-        { name: 'x', type: 'text', label: 'X / Twitter' },
-        { name: 'facebook', type: 'text' },
+        { name: 'instagram', type: 'text', defaultValue: 'https://www.instagram.com/theclarity60/', validate: profileUrl },
+        { name: 'facebook', type: 'text', validate: profileUrl },
+        { name: 'youtube', type: 'text', label: 'YouTube', validate: profileUrl },
+        { name: 'tiktok', type: 'text', label: 'TikTok', validate: profileUrl },
+        { name: 'x', type: 'text', label: 'X / Twitter', validate: profileUrl },
       ],
     },
   ],

@@ -6328,20 +6328,26 @@
           "notNull": false,
           "default": "'https://www.instagram.com/theclarity60/'"
         },
+        "socials_facebook": {
+          "name": "socials_facebook",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "socials_youtube": {
           "name": "socials_youtube",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },
-        "socials_x": {
-          "name": "socials_x",
+        "socials_tiktok": {
+          "name": "socials_tiktok",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },
-        "socials_facebook": {
-          "name": "socials_facebook",
+        "socials_x": {
+          "name": "socials_x",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -6555,6 +6561,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "41900adf-85fe-46ea-a90f-ae8ba96016d4",
+  "id": "13cfda44-495c-416c-9334-ce7ff489e1f3",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
