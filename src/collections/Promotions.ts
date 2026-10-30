@@ -1,6 +1,13 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, UploadFieldSingleValidation } from 'payload'
+import { upload } from 'payload/shared'
 
 import { anyone, editorsOnly } from '@/access/roles'
+
+/** Required only for one style; Payload's own upload check (incl. the image/video filter) still runs. */
+const requiredForStyle =
+  (style: string, message: string): UploadFieldSingleValidation =>
+  (value, options) =>
+    (options.siblingData as { style?: string } | undefined)?.style === style && !value ? message : upload(value, options)
 
 /**
  * House promotions: small notices that fill an ad slot when no paid ad is running
@@ -62,8 +69,7 @@ export const Promotions: CollectionConfig = {
       admin: {
         description: 'Notice: optional, cropped to a small square. Wide: required, shown whole at full width (images taller than a square are trimmed to a square). Video: optional still shown before the clip plays.',
       },
-      validate: (value: unknown, { siblingData }: { siblingData: Partial<{ style: string }> }) =>
-        siblingData?.style === 'wide' && !value ? 'The Wide style needs an image.' : true,
+      validate: requiredForStyle('wide', 'The Wide style needs an image.'),
     },
     {
       name: 'video',
@@ -74,8 +80,7 @@ export const Promotions: CollectionConfig = {
         condition: (_, s) => s?.style === 'video',
         description: 'MP4 or WebM, ideally under 10 seconds and 5 MB. It plays muted on a loop, and only while on screen.',
       },
-      validate: (value: unknown, { siblingData }: { siblingData: Partial<{ style: string }> }) =>
-        siblingData?.style === 'video' && !value ? 'The Video style needs a video.' : true,
+      validate: requiredForStyle('video', 'The Video style needs a video.'),
     },
     {
       type: 'collapsible',
