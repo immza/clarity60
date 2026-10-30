@@ -1,8 +1,8 @@
 import type { GlobalConfig } from 'payload'
-
 import type { Field } from 'payload'
 
 import { anyone, superAdminOnly } from '@/access/roles'
+import { profileHref } from '@/lib/text'
 
 type EarDefaults = { kind: 'custom' | 'storiesToday'; label: string; text: string; link?: string }
 
@@ -35,14 +35,8 @@ const earField = (name: string, label: string, defaults: EarDefaults): Field => 
 })
 
 /** Social profile links must be full https:// URLs (or empty). */
-const profileUrl = (value: unknown) => {
-  if (!value) return true
-  try {
-    return new URL(String(value)).protocol === 'https:' ? true : 'Use a full https:// link.'
-  } catch {
-    return 'Use a full https:// link, e.g. https://www.tiktok.com/@theclarity60'
-  }
-}
+const profileUrl = (value: unknown) =>
+  !value || profileHref(value) ? true : 'Use a full https:// link, e.g. https://www.tiktok.com/@theclarity60'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',

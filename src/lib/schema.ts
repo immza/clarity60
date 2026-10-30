@@ -1,3 +1,4 @@
+import { profileHref } from '@/lib/text'
 import type { Article, Author, Category, FaqBlock, Media, Page, Section, SiteSetting, Tag } from '@/payload-types'
 
 /** Absolute site origin for canonical URLs and structured data. */
@@ -19,7 +20,9 @@ const FALLBACK_SOCIALS = ['https://www.instagram.com/theclarity60/']
  */
 export const organization = (settings?: SchemaSettings | null) => {
   const socials = settings
-    ? Object.values(settings.socials ?? {}).filter((v): v is string => typeof v === 'string' && /^https:\/\//.test(v))
+    ? Object.values(settings.socials ?? {})
+        .map(profileHref)
+        .filter((v): v is string => Boolean(v))
     : FALLBACK_SOCIALS
   const email = settings?.contactEmail
   return {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { absolute, articleSchema, faqItems, faqSchema, imageObject, organization, SITE_URL, webPageSchema } from '@/lib/schema'
+import { profileHref } from '@/lib/text'
 import type { Article, Media, Page } from '@/payload-types'
 
 const media = (over: Partial<Media> = {}) =>
@@ -42,6 +43,14 @@ describe('structured data', () => {
     expect(org.sameAs).toEqual(['https://www.instagram.com/theclarity60/', 'https://x.com/clarity60'])
     expect(org.contactPoint?.email).toBe('hello@clarity60.com')
     expect(org.correctionsPolicy).toBe(`${SITE_URL}/corrections`)
+  })
+
+  it('only accepts full https profile links, in canonical form', () => {
+    expect(profileHref('https://www.tiktok.com/@theclarity60')).toBe('https://www.tiktok.com/@theclarity60')
+    expect(profileHref('HTTPS://Instagram.com/theclarity60')).toBe('https://instagram.com/theclarity60')
+    expect(profileHref('youtube.com/@name')).toBeNull()
+    expect(profileHref('https:instagram.com/x')).toBeNull()
+    expect(profileHref('http://facebook.com/x')).toBeNull()
   })
 
   it('describes image credit and licence from the Media fields', () => {

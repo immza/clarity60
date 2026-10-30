@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { PrivacyChoicesLink } from '@/components/consent/ConsentBanner'
 import { getLatestCorrection, getPublishedPageSlugs, getSiteSettings } from '@/lib/data'
+import { profileHref } from '@/lib/text'
 
 import './footer.css'
 
@@ -35,7 +36,7 @@ export async function Footer() {
   // Page links appear only once that page is published; /corrections is a built-in route.
   const links = LINKS.filter((l) => l.href === '/corrections' || pageSlugs.includes(l.href.slice(1)))
   // Official accounts from Site Settings → Socials; empty ones are skipped.
-  const socials = SOCIALS.map((s) => ({ ...s, url: settings.socials?.[s.key] })).filter((s) => s.url)
+  const socials = SOCIALS.map((s) => ({ ...s, url: profileHref(settings.socials?.[s.key]) })).filter((s) => s.url)
 
   return (
     <footer className="footer">
