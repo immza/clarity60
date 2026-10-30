@@ -10,6 +10,11 @@ import { jsonLd, organization, websiteSchema } from '@/lib/schema'
 
 import './front.css'
 
+// The hosting CDN keeps this page for as long as Cache-Control's s-maxage says, and
+// publishing only clears the app's own cache. One minute keeps a new story's wait on the
+// front page short; the data underneath stays cached, so a refresh costs no queries.
+export const revalidate = 60
+
 const catName = (a: CardArticle) => (a.category && typeof a.category === 'object' ? a.category.name : '')
 
 export default async function FrontPage() {
