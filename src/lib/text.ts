@@ -94,3 +94,19 @@ export const searchTerms = (q: string | undefined | null): string[] => {
     .filter((w) => w.length > 0)
   return [...new Set(words)].slice(0, MAX_SEARCH_TERMS)
 }
+
+/**
+ * A social profile link in canonical form, or null if it isn't a full https:// URL
+ * with a host. Used when saving and when rendering, so older saved values that slipped
+ * through (e.g. "youtube.com/@name", "https:instagram.com/x") never become site links.
+ */
+export const profileHref = (value: unknown): string | null => {
+  const raw = typeof value === 'string' ? value.trim() : ''
+  if (!/^https:\/\/[^/]/i.test(raw)) return null
+  try {
+    const url = new URL(raw)
+    return url.protocol === 'https:' && url.hostname.includes('.') ? url.href : null
+  } catch {
+    return null
+  }
+}

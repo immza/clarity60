@@ -1,8 +1,8 @@
 import type { GlobalConfig } from 'payload'
-
 import type { Field } from 'payload'
 
 import { anyone, superAdminOnly } from '@/access/roles'
+import { profileHref } from '@/lib/text'
 
 type EarDefaults = { kind: 'custom' | 'storiesToday'; label: string; text: string; link?: string }
 
@@ -33,6 +33,10 @@ const earField = (name: string, label: string, defaults: EarDefaults): Field => 
     { name: 'link', type: 'text', defaultValue: defaults.link, admin: { description: 'Optional. Makes the whole box a link.' } },
   ],
 })
+
+/** Social profile links must be full https:// URLs (or empty). */
+const profileUrl = (value: unknown) =>
+  !value || profileHref(value) ? true : 'Use a full https:// link, e.g. https://www.tiktok.com/@theclarity60'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
@@ -84,13 +88,35 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
     {
+      type: 'collapsible',
+      label: 'Search engines and AI (structured data)',
+      fields: [
+        {
+          name: 'contactEmail',
+          type: 'email',
+          required: true,
+          defaultValue: 'hello@clarity60.com',
+          admin: { description: 'Public contact address given to Google and AI engines as the publisher contact.' },
+        },
+        {
+          name: 'faqSchema',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'Describe FAQ blocks to search engines (FAQPage structured data)',
+          admin: { description: 'Untick to stop sending FAQ markup site-wide. The FAQ sections stay visible on articles.' },
+        },
+      ],
+    },
+    {
       name: 'socials',
       type: 'group',
+      admin: { description: 'Full https:// profile links. Filled-in accounts appear in the footer (“Follow Clarity60”) and are listed to Google as Clarity60’s official profiles. Leave one empty to hide it.' },
       fields: [
-        { name: 'instagram', type: 'text', defaultValue: 'https://www.instagram.com/theclarity60/' },
-        { name: 'youtube', type: 'text' },
-        { name: 'x', type: 'text', label: 'X / Twitter' },
-        { name: 'facebook', type: 'text' },
+        { name: 'instagram', type: 'text', defaultValue: 'https://www.instagram.com/theclarity60/', validate: profileUrl },
+        { name: 'facebook', type: 'text', validate: profileUrl },
+        { name: 'youtube', type: 'text', label: 'YouTube', validate: profileUrl },
+        { name: 'tiktok', type: 'text', label: 'TikTok', validate: profileUrl },
+        { name: 'x', type: 'text', label: 'X / Twitter', validate: profileUrl },
       ],
     },
   ],

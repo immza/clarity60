@@ -1,7 +1,8 @@
 import Link from 'next/link'
 
 import { PrivacyChoicesLink } from '@/components/consent/ConsentBanner'
-import { getLatestCorrection, getPublishedPageSlugs } from '@/lib/data'
+import { getLatestCorrection, getPublishedPageSlugs, getSiteSettings } from '@/lib/data'
+import { profileHref } from '@/lib/text'
 
 import './footer.css'
 
@@ -17,11 +18,25 @@ const LINKS = [
   { label: 'Terms', href: '/terms' },
 ]
 
+const SOCIALS = [
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'youtube', label: 'YouTube' },
+  { key: 'tiktok', label: 'TikTok' },
+  { key: 'x', label: 'X' },
+] as const
+
 export async function Footer() {
   const pageLinks = LINKS.filter((l) => l.href !== '/corrections').map((l) => l.href.slice(1))
-  const [correction, pageSlugs] = await Promise.all([getLatestCorrection(), getPublishedPageSlugs(pageLinks)])
+  const [correction, pageSlugs, settings] = await Promise.all([
+    getLatestCorrection(),
+    getPublishedPageSlugs(pageLinks),
+    getSiteSettings(),
+  ])
   // Page links appear only once that page is published; /corrections is a built-in route.
   const links = LINKS.filter((l) => l.href === '/corrections' || pageSlugs.includes(l.href.slice(1)))
+  // Official accounts from Site Settings → Socials; empty ones are skipped.
+  const socials = SOCIALS.map((s) => ({ ...s, url: profileHref(settings.socials?.[s.key]) })).filter((s) => s.url)
 
   return (
     <footer className="footer">
@@ -48,6 +63,19 @@ export async function Footer() {
           </p>
           <div className="footer__meta">
             <p>© {new Date().getFullYear()} Clarity60 · clarity60.com</p>
+            {socials.length > 0 && (
+              <p className="footer__follow">
+                Follow Clarity60:{' '}
+                {socials.map((s, i) => (
+                  <span key={s.key}>
+                    {i > 0 && ' · '}
+                    <a href={s.url!} target="_blank" rel="me noopener">
+                      {s.label}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            )}
             <ul className="footer__links">
               {links.map((l) => (
                 <li key={l.href}>

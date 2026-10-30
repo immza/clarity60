@@ -38,6 +38,15 @@
   margin: 0 0 6px;
 }
 
+.footer__follow a {
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.footer__follow a:hover {
+  text-decoration: underline;
+}
+
 .footer__links {
   display: flex;
   flex-wrap: wrap;
