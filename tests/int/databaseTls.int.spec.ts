@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { databaseTls } from '@/lib/databaseTls'
+import { databaseTls, normalizePem } from '@/lib/databaseTls'
 
 const CA = '-----BEGIN CERTIFICATE-----\nMIIB...\n-----END CERTIFICATE-----'
 
@@ -20,5 +20,12 @@ describe('database TLS', () => {
     expect(() => databaseTls('postgres://u:p@localhost/db?host=remote.example', undefined)).toThrow(/must not set host/)
     expect(() => databaseTls('postgres://u:p@db.example.com/db?sslmode=disable', CA)).toThrow(/must not set sslmode/)
     expect(() => databaseTls('postgres://u:p@db.example.com/db?ssl=false', CA)).toThrow(/must not set ssl/)
+  })
+
+  it('accepts a certificate a dashboard flattened onto one line', () => {
+    const pem = `-----BEGIN CERTIFICATE-----\n${'A'.repeat(64)}\n${'B'.repeat(64)}\n${'C'.repeat(20)}\n-----END CERTIFICATE-----`
+    for (const flattened of [pem, pem.replace(/\n/g, ' '), pem.replace(/\n/g, '\\n'), pem.replace(/\n/g, '')]) {
+      expect(normalizePem(flattened)).toBe(pem)
+    }
   })
 })
