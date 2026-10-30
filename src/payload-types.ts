@@ -454,7 +454,6 @@ export interface User {
    */
   author?: (number | null) | Author;
   totpSecret?: string | null;
-  hasTotp?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -581,7 +580,7 @@ export interface Promotion {
   link: string;
   style: 'notice' | 'wide' | 'video';
   /**
-   * Notice: optional, cropped to a small square. Wide: required, shown 16:9. Video: optional still shown before the clip plays.
+   * Notice: optional, cropped to a small square. Wide: required, shown whole at full width (images taller than a square are trimmed to a square). Video: optional still shown before the clip plays.
    */
   image?: (number | null) | Media;
   /**
@@ -1163,7 +1162,6 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   author?: T;
   totpSecret?: T;
-  hasTotp?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

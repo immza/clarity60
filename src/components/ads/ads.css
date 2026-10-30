@@ -114,7 +114,8 @@
   padding: 12px 0;
 }
 
-/* Same 16:9 frame as article covers, reserved up front so the page never jumps. */
+/* The frame's shape is reserved up front so the page never jumps. Wide promos set
+   their own image's shape inline; video uses the 16:9 article-cover frame. */
 .promo__media {
   width: 100%;
   aspect-ratio: 16 / 9;

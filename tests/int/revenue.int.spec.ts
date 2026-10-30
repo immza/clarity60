@@ -87,7 +87,8 @@ describe('promotion styles', () => {
   it('defaults to the quiet notice style, which needs no image', async () => {
     const created = await payload.create({
       collection: 'promotions',
-      data: { title: 'Default style', headline: 'Read the paper', link: '/about' },
+      // No style given, to check the default; the generated type marks it required.
+      data: { title: 'Default style', headline: 'Read the paper', link: '/about' } as Promotion,
       overrideAccess: true,
     })
     expect(created.style).toBe('notice')

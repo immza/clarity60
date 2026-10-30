@@ -50,7 +50,7 @@ export const Promotions: CollectionConfig = {
       defaultValue: 'notice',
       options: [
         { label: 'Notice: text with a small square thumbnail (quiet)', value: 'notice' },
-        { label: 'Wide: full-width image, same shape as article covers', value: 'wide' },
+        { label: 'Wide: full-width image in its own shape', value: 'wide' },
         { label: 'Video: short silent looping clip', value: 'video' },
       ],
     },
@@ -60,7 +60,7 @@ export const Promotions: CollectionConfig = {
       relationTo: 'media',
       filterOptions: { mimeType: { like: 'image/' } },
       admin: {
-        description: 'Notice: optional, cropped to a small square. Wide: required, shown 16:9. Video: optional still shown before the clip plays.',
+        description: 'Notice: optional, cropped to a small square. Wide: required, shown whole at full width (images taller than a square are trimmed to a square). Video: optional still shown before the clip plays.',
       },
       validate: (value: unknown, { siblingData }: { siblingData: Partial<{ style: string }> }) =>
         siblingData?.style === 'wide' && !value ? 'The Wide style needs an image.' : true,

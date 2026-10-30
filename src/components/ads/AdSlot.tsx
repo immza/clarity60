@@ -32,7 +32,11 @@ function HousePromo({ promo }: { promo: Promotion }) {
         <Image src={image.url!} alt="" width={72} height={72} className="promo__image" sizes="72px" />
       )}
       {style === 'wide' && (
-        <div className="promo__media">
+        // The whole image in its own shape; only taller-than-square images are trimmed to a square.
+        <div
+          className="promo__media"
+          style={{ aspectRatio: Math.max((image!.width ?? 16) / (image!.height ?? 9), 1) }}
+        >
           <Image
             src={image!.url!}
             alt=""
@@ -45,7 +49,7 @@ function HousePromo({ promo }: { promo: Promotion }) {
       )}
       {style === 'video' && (
         <div className="promo__media">
-          <PromoVideo src={video!.url!} type={video!.mimeType ?? undefined} poster={image?.url ?? undefined} />
+          <PromoVideo src={video!.url!} type={video!.mimeType ?? undefined} poster={image?.url ?? undefined} label={promo.headline} />
         </div>
       )}
       <div className="promo__body">
