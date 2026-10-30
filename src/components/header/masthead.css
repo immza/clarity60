@@ -368,7 +368,7 @@
   border-bottom-color: var(--rule-soft);
 }
 
-/* The Wire: one headline per region, scrolling like a ticker */
+/* Around the World ticker: one headline per region, scrolling like a ticker */
 .wire {
   display: flex;
   align-items: stretch;

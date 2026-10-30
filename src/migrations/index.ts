@@ -1,6 +1,7 @@
 import * as migration_20261025_104521_initial from './20261025_104521_initial';
 import * as migration_20261029_155049_media_storage_fields from './20261029_155049_media_storage_fields';
 import * as migration_20261030_104020_promotion_styles from './20261030_104020_promotion_styles';
+import * as migration_20261030_111324_ticker_label from './20261030_111324_ticker_label';
 
 export const migrations = [
   {
@@ -16,6 +17,11 @@ export const migrations = [
   {
     up: migration_20261030_104020_promotion_styles.up,
     down: migration_20261030_104020_promotion_styles.down,
-    name: '20261030_104020_promotion_styles'
+    name: '20261030_104020_promotion_styles',
+  },
+  {
+    up: migration_20261030_111324_ticker_label.up,
+    down: migration_20261030_111324_ticker_label.down,
+    name: '20261030_111324_ticker_label'
   },
 ];

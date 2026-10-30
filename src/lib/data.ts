@@ -30,7 +30,7 @@ export const getSiteSettings = unstable_cache(
   { tags: [TAGS.settings], revalidate: FALLBACK_REVALIDATE },
 )
 
-/** One latest published headline per news category, for The Wire ticker. */
+/** One latest published headline per news category, for the Around the World ticker. */
 export const getWireHeadlines = unstable_cache(
   async () => {
     const p = await payload()

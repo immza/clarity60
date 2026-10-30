@@ -56,11 +56,11 @@ async function MastheadEar({ ear, side }: { ear: Ear | null | undefined; side: '
   )
 }
 
-async function Wire() {
+async function Wire({ label }: { label: string }) {
   const items = await getWireHeadlines()
   return (
-    <div className="wire" role="region" aria-label="The Wire: latest headlines">
-      <span className="wire__label">The Wire</span>
+    <div className="wire" role="region" aria-label={`${label}: latest headlines`}>
+      <span className="wire__label">{label}</span>
       <div className="wire__viewport">
         {items.length === 0 ? (
           <p className="wire__empty">Headlines from every region appear here as stories are published.</p>
@@ -165,7 +165,7 @@ export async function Masthead({ variant }: { variant: 'front' | 'compact' }) {
     </nav>
     {variant === 'front' && (
       <div className="wrap">
-        <Wire />
+        <Wire label={settings.tickerLabel || 'Around the World'} />
       </div>
     )}
     </>

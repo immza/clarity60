@@ -282,6 +282,8 @@ export interface Article {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Upload sharp originals: JPG, PNG or WebP, at least 1200px wide (Google Discover recommends that width for large previews). Don’t shrink files yourself: the site converts every image to WebP/AVIF and resizes it for each screen, so readers get small, fast files automatically.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -454,7 +456,6 @@ export interface User {
    */
   author?: (number | null) | Author;
   totpSecret?: string | null;
-  hasTotp?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -1163,7 +1164,6 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   author?: T;
   totpSecret?: T;
-  hasTotp?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -1300,6 +1300,10 @@ export interface SiteSetting {
   id: number;
   tagline: string;
   /**
+   * Name of the scrolling headline strip on the front page.
+   */
+  tickerLabel: string;
+  /**
    * Show an in-feed ad after every N stories.
    */
   inFeedAdEvery: number;
@@ -1360,6 +1364,7 @@ export interface SiteSetting {
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
   tagline?: T;
+  tickerLabel?: T;
   inFeedAdEvery?: T;
   leftEar?:
     | T

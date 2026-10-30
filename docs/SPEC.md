@@ -21,7 +21,7 @@
   - Search.
 - **Front Page modules**
   - **The Latest:** 5 newest one-liners, filled automatically (replaces Today's Brief).
-  - **The Wire:** a ticker showing the latest headline per region, filled automatically.
+  - **Around the World** (the ticker; name editable in Site Settings): the latest headline per region, filled automatically.
   - **Developing story timeline** on news articles.
   - **Most Read:** sitewide and per section.
   - **Corrections box.**
