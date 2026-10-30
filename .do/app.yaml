@@ -18,7 +18,7 @@ services:
     build_command: npm run build
     run_command: npm start
     http_port: 3000
-    instance_size_slug: apps-s-1vcpu-1gb   # $10/mo flat; next size up if memory alerts fire
+    instance_size_slug: apps-s-1vcpu-1gb-fixed   # $10/mo flat, 1 container; apps-s-1vcpu-1gb ($12) allows scaling out
     instance_count: 1
     health_check:
       http_path: /healthz
@@ -36,7 +36,7 @@ services:
         value: 3
         window: ONE_HOUR
     envs:
-      - { key: NODE_ENV, value: production, scope: RUN_AND_BUILD_TIME }
+      - { key: NODE_ENV, value: production, scope: RUN_TIME }  # run time only: at build time it makes npm skip devDependencies (TypeScript)
       - { key: NEXT_PUBLIC_SITE_URL, value: https://clarity60.com, scope: RUN_AND_BUILD_TIME }
       - { key: NEXT_PUBLIC_SENTRY_DSN, value: "https://1859897559c199bc447015b4ffbd9c7b@o4512316679520256.ingest.us.sentry.io/4512316688433152", scope: RUN_AND_BUILD_TIME }
       - { key: S3_REGION, value: us-west-2, scope: RUN_AND_BUILD_TIME }
