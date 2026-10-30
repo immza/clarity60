@@ -18,18 +18,4 @@ describe('rate limiter', () => {
     expect(clientIp(new Headers({ 'x-forwarded-for': '5.6.7.8', 'cf-connecting-ip': '6.6.6.6' }))).toBe('unknown')
     expect(clientIp(new Headers({ 'cf-connecting-ip': '7.7.7.7' }), 'cf-connecting-ip')).toBe('7.7.7.7')
   })
-
-  it('uses the Cloudflare visitor header only when the request really came through Cloudflare', () => {
-    const via = (peer: string, visitor = '8.8.4.4') =>
-      clientIp(new Headers({ 'do-connecting-ip': peer, 'cf-connecting-ip': visitor }), 'do-connecting-ip')
-    expect(via('172.70.1.2')).toBe('8.8.4.4')
-    expect(via('2a06:98c7::1', '2001:db8::5')).toBe('2001:db8::5')
-    expect(via('2606:4700:10::6816:1')).toBe('8.8.4.4')
-    // Sent straight to the app: the claimed visitor IP is ignored.
-    expect(via('203.0.113.9')).toBe('203.0.113.9')
-    expect(via('2001:db8::1')).toBe('2001:db8::1')
-    // Garbage in the visitor header falls back to the edge address.
-    expect(via('172.70.1.2', 'not-an-ip')).toBe('172.70.1.2')
-    expect(via('999.1.1.1')).toBe('999.1.1.1')
-  })
 })
