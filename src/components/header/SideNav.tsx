@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 
+import { SearchForm } from './SearchForm'
+
 export type SideNavGroup = {
   label: string
   href: string
@@ -53,6 +55,8 @@ export function SideNav({ groups, extras }: { groups: SideNavGroup[]; extras: { 
               ✕
             </button>
           </div>
+
+          <SearchForm variant="drawer" />
 
           <nav aria-label="All sections">
             <ul className="sidenav__list">

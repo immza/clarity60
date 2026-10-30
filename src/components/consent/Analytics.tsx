@@ -1,6 +1,5 @@
-import Script from 'next/script'
-
 import { ConsentBanner } from './ConsentBanner'
+import { GoogleAnalytics } from './GoogleAnalytics'
 
 /**
  * GA4 behind Consent Mode v2. Nothing loads (and no banner shows) until
@@ -11,10 +10,7 @@ export function Analytics() {
   if (!id) return null
   return (
     <>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`} strategy="afterInteractive" />
-      <Script id="ga4-init" strategy="afterInteractive">
-        {`gtag('js', new Date()); gtag('config', ${JSON.stringify(id)}, { anonymize_ip: true });`}
-      </Script>
+      <GoogleAnalytics id={id} />
       <ConsentBanner />
     </>
   )
