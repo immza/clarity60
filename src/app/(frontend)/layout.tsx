@@ -24,6 +24,13 @@ export const metadata: Metadata = {
   title: { default: 'Clarity60 · The world, explained.', template: '%s · Clarity60' },
   description: 'World news and explainers in plain English. The world, explained.',
   applicationName: 'Clarity60',
+  // Lets Google show large image previews (e.g. in Discover) and full snippets; without
+  // max-image-preview:large, Discover only shows a small thumbnail.
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 },
+  },
 }
 
 export const viewport: Viewport = {
