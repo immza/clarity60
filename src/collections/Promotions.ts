@@ -5,9 +5,11 @@ import { anyone, editorsOnly } from '@/access/roles'
 
 /** Required only for one style; Payload's own upload check (incl. the image/video filter) still runs. */
 const requiredForStyle =
-  (style: string, message: string): UploadFieldSingleValidation =>
-  (value, options) =>
-    (options.siblingData as { style?: string } | undefined)?.style === style && !value ? message : upload(value, options)
+  (styles: string[], message: string): UploadFieldSingleValidation =>
+  (value, options) => {
+    const style = (options.siblingData as { style?: string } | undefined)?.style
+    return style && styles.includes(style) && !value ? message : upload(value, options)
+  }
 
 /**
  * House promotions: small notices that fill an ad slot when no paid ad is running
@@ -57,7 +59,8 @@ export const Promotions: CollectionConfig = {
       defaultValue: 'notice',
       options: [
         { label: 'Notice: text with a small square thumbnail (quiet)', value: 'notice' },
-        { label: 'Wide: full-width image in its own shape', value: 'wide' },
+        { label: 'Card: image beside the text, whole and never cropped', value: 'card' },
+        { label: 'Banner: a wide strip showing the whole image, kept to a modest height', value: 'wide' },
         { label: 'Video: short silent looping clip', value: 'video' },
       ],
     },
@@ -67,9 +70,9 @@ export const Promotions: CollectionConfig = {
       relationTo: 'media',
       filterOptions: { mimeType: { like: 'image/' } },
       admin: {
-        description: 'Notice: optional, cropped to a small square. Wide: required, shown whole at full width (images taller than a square are trimmed to a square). Video: optional still shown before the clip plays.',
+        description: 'Notice: optional, cropped to a small square. Card and Banner: required, always shown whole, never cropped. Video: optional still shown before the clip plays.',
       },
-      validate: requiredForStyle('wide', 'The Wide style needs an image.'),
+      validate: requiredForStyle(['card', 'wide'], 'The Card and Banner styles need an image.'),
     },
     {
       name: 'video',
@@ -80,7 +83,7 @@ export const Promotions: CollectionConfig = {
         condition: (_, s) => s?.style === 'video',
         description: 'MP4 or WebM, ideally under 10 seconds and 5 MB. It plays muted on a loop, and only while on screen.',
       },
-      validate: requiredForStyle('video', 'The Video style needs a video.'),
+      validate: requiredForStyle(['video'], 'The Video style needs a video.'),
     },
     {
       type: 'collapsible',

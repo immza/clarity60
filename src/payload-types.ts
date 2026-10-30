@@ -578,9 +578,9 @@ export interface Promotion {
    * A page on this site (/advertise) or a full https:// link.
    */
   link: string;
-  style: 'notice' | 'wide' | 'video';
+  style: 'notice' | 'card' | 'wide' | 'video';
   /**
-   * Notice: optional, cropped to a small square. Wide: required, shown whole at full width (images taller than a square are trimmed to a square). Video: optional still shown before the clip plays.
+   * Notice: optional, cropped to a small square. Card and Banner: required, always shown whole, never cropped. Video: optional still shown before the clip plays.
    */
   image?: (number | null) | Media;
   /**

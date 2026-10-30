@@ -27,13 +27,12 @@ export function PromoVideo({ src, type, poster, label }: { src: string; type?: s
   useEffect(() => {
     const video = ref.current
     if (!video) return
-    if (reduced || paused) {
-      video.pause()
-      return
-    }
+    const autoplay = !reduced && !paused
+    if (!autoplay) video.pause()
+    // Always pause off screen (even a clip the reader started); only autoplay back on screen.
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) video.play().catch(() => {})
-      else video.pause()
+      if (!entry.isIntersecting) video.pause()
+      else if (autoplay) video.play().catch(() => {})
     })
     observer.observe(video)
     return () => observer.disconnect()

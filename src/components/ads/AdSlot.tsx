@@ -18,7 +18,8 @@ function HousePromo({ promo }: { promo: Promotion }) {
   const asMedia = (m: Promotion['image']) => (m && typeof m === 'object' && m.url ? (m as Media) : null)
   const image = asMedia(promo.image)
   const video = asMedia(promo.video)
-  const style = promo.style === 'video' && video ? 'video' : promo.style === 'wide' && image ? 'wide' : 'notice'
+  const style =
+    promo.style === 'video' && video ? 'video' : (promo.style === 'wide' || promo.style === 'card') && image ? promo.style : 'notice'
   const external = /^https?:\/\//.test(promo.link)
   const paid = /sponsor|partner|advert/i.test(promo.label ?? '')
   const cta = (
@@ -31,25 +32,21 @@ function HousePromo({ promo }: { promo: Promotion }) {
       {style === 'notice' && image && (
         <Image src={image.url!} alt="" width={72} height={72} className="promo__image" sizes="72px" />
       )}
-      {style === 'wide' && (
-        // The whole image in its own shape; only taller-than-square images are trimmed to a square.
-        <div
-          className="promo__media"
-          style={{ aspectRatio: Math.max((image!.width ?? 16) / (image!.height ?? 9), 1) }}
-        >
+      {(style === 'wide' || style === 'card') && (
+        // Always the whole image: the frame takes the image's own shape, capped in size by CSS.
+        <div className="promo__media">
           <Image
             src={image!.url!}
             alt=""
             width={image!.width ?? 1200}
             height={image!.height ?? 675}
-            sizes="(min-width: 1000px) 760px, 100vw"
-            style={{ objectPosition: `${image!.focalX ?? 50}% ${image!.focalY ?? 50}%` }}
+            sizes={style === 'card' ? '320px' : '(min-width: 1000px) 760px, 100vw'}
           />
         </div>
       )}
       {style === 'video' && (
         <div className="promo__media">
-          <PromoVideo src={video!.url!} type={video!.mimeType ?? undefined} poster={image?.url ?? undefined} label={promo.headline} />
+          <PromoVideo key={video!.url!} src={video!.url!} type={video!.mimeType ?? undefined} poster={image?.url ?? undefined} label={promo.headline} />
         </div>
       )}
       <div className="promo__body">

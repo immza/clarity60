@@ -6406,6 +6406,7 @@
       "schema": "public",
       "values": [
         "notice",
+        "card",
         "wide",
         "video"
       ]
@@ -6498,6 +6499,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "d6362e50-677c-4079-8d8a-38ee76edddc7",
+  "id": "f8502e82-eaa3-44f7-ba14-a2da593593da",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

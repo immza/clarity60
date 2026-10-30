@@ -78,7 +78,7 @@ describe('affiliate links', () => {
 })
 
 describe('promotion styles', () => {
-  const promo = (style: 'notice' | 'wide' | 'video') =>
+  const promo = (style: 'notice' | 'card' | 'wide' | 'video') =>
     payload.create({
       collection: 'promotions',
       data: { title: `Style ${style}`, headline: 'Read the paper', link: '/about', style },
@@ -95,8 +95,9 @@ describe('promotion styles', () => {
     expect(created.style).toBe('notice')
   })
 
-  it('wide needs an image and video needs a clip', async () => {
+  it('card and banner need an image, and video needs a clip', async () => {
     await expect(promo('wide')).rejects.toThrow(/image/i)
+    await expect(promo('card')).rejects.toThrow(/image/i)
     await expect(promo('video')).rejects.toThrow(/video/i)
   })
 
