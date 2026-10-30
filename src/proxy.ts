@@ -7,6 +7,9 @@ import { clientIp, rateLimit } from './lib/rateLimit'
 const AUTH_PATHS = /^\/api\/users\/(login|forgot-password|reset-password|first-register|unlock)$|^\/api\/(verify-totp|setup-totp)$/
 const AUTH_LIMIT = 10
 const AUTH_WINDOW_MS = 10 * 60_000
+// Search runs a live database query, so cap it per IP: 30 searches a minute is plenty for a reader.
+const SEARCH_LIMIT = 30
+const SEARCH_WINDOW_MS = 60_000
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -29,6 +32,16 @@ export function proxy(request: NextRequest) {
         { errors: [{ message: 'Too many attempts. Please wait a few minutes and try again.' }] },
         { status: 429, headers: { 'Retry-After': String(retryAfter) } },
       )
+    }
+  }
+
+  if (pathname === '/search' && request.nextUrl.searchParams.has('q')) {
+    const { allowed, retryAfter } = rateLimit(`search:${clientIp(request.headers)}`, SEARCH_LIMIT, SEARCH_WINDOW_MS)
+    if (!allowed) {
+      return new NextResponse('Too many searches. Please wait a minute and try again.', {
+        status: 429,
+        headers: { 'Retry-After': String(retryAfter), 'Content-Type': 'text/plain; charset=utf-8' },
+      })
     }
   }
 

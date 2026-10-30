@@ -2,6 +2,8 @@ import { getPayload, type Payload } from 'payload'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import config from '@/payload.config'
+import { searchArticles } from '@/lib/search'
+import { searchTerms } from '@/lib/text'
 import type { Article, Category, Section, User } from '@/payload-types'
 
 let payload: Payload
@@ -204,6 +206,29 @@ describe('public visibility', () => {
   it('anonymous visitors cannot read staff accounts or the audit log', async () => {
     await expect(payload.find({ collection: 'users', overrideAccess: false })).rejects.toThrow()
     await expect(payload.find({ collection: 'audit-log', overrideAccess: false })).rejects.toThrow()
+  })
+})
+
+describe('search', () => {
+  it('cleans queries into a few plain words', () => {
+    expect(searchTerms('  Tokyo   VENDING tokyo ')).toEqual(['tokyo', 'vending'])
+    expect(searchTerms('100% _sale_ <script>')).toEqual(['100', 'sale', 'script'])
+    expect(searchTerms("Japan's 'quiet' rise — co-op")).toEqual(["japan's", 'quiet', 'rise', 'co-op'])
+    expect(searchTerms('a b c d e f g h')).toHaveLength(6)
+    expect(searchTerms('%%% ___')).toEqual([])
+  })
+
+  it('finds published stories by headline or summary, needing every word, never drafts', async () => {
+    const live = await draftArticle(writer, { title: 'Monsoon floods reach Dhaka suburbs', summary: 'Rivers rose overnight.' })
+    await payload.update({ collection: 'articles', id: live.id, data: { _status: 'published' }, ...asUser(editor) })
+    await draftArticle(writer, { title: 'Monsoon draft that is not live', summary: 'Rivers.' })
+
+    const byTitle = await searchArticles(searchTerms('monsoon'))
+    expect(byTitle.docs.map((d) => d.id)).toEqual([live.id])
+    const acrossFields = await searchArticles(searchTerms('Monsoon RIVERS'))
+    expect(acrossFields.docs.map((d) => d.id)).toEqual([live.id])
+    const missingWord = await searchArticles(searchTerms('monsoon volcano'))
+    expect(missingWord.totalDocs).toBe(0)
   })
 })
 

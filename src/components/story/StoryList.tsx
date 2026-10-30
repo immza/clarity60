@@ -18,6 +18,7 @@ export async function StoryList({
   adKey,
   variant = 'list',
   emptyText = 'No stories here yet.',
+  fullPageLinks = false,
 }: {
   stories: CardArticle[]
   basePath: string
@@ -26,13 +27,16 @@ export async function StoryList({
   adKey?: string
   variant?: 'list' | 'grid'
   emptyText?: string
+  /** Pager links do a full page load (search uses this so analytics sees a redacted URL). */
+  fullPageLinks?: boolean
 }) {
   const settings = await getSiteSettings()
   const every = Math.max(3, settings.inFeedAdEvery ?? 6)
 
   if (stories.length === 0) return <p className="story-list__empty">{emptyText}</p>
 
-  const href = (p: number) => (p <= 1 ? basePath : `${basePath}?page=${p}`)
+  const href = (p: number) => (p <= 1 ? basePath : `${basePath}${basePath.includes('?') ? '&' : '?'}page=${p}`)
+  const PageLink = fullPageLinks ? 'a' : Link
 
   return (
     <>
@@ -50,17 +54,17 @@ export async function StoryList({
       {totalPages > 1 && (
         <nav className="pager" aria-label="Pages">
           {page > 1 && (
-            <Link href={href(page - 1)} rel="prev" prefetch={false}>
+            <PageLink href={href(page - 1)} rel="prev" {...(fullPageLinks ? {} : { prefetch: false })}>
               ← Newer
-            </Link>
+            </PageLink>
           )}
           <span>
             Page {page} of {totalPages}
           </span>
           {page < totalPages && (
-            <Link href={href(page + 1)} rel="next" prefetch={false}>
+            <PageLink href={href(page + 1)} rel="next" {...(fullPageLinks ? {} : { prefetch: false })}>
               Older stories →
-            </Link>
+            </PageLink>
           )}
         </nav>
       )}

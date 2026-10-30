@@ -111,7 +111,7 @@ export const getSectionCategories = unstable_cache(
 )
 
 /** Fields a story card needs; keeps list queries light. */
-const CARD_SELECT = {
+export const CARD_SELECT = {
   title: true,
   summary: true,
   path: true,

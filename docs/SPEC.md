@@ -135,7 +135,7 @@ Sections, categories, sub-categories and navigation are all edited in the admin;
   - scheduled publishing
   - daily database keep-alive
   - nightly `pg_dump` to R2 and an offsite copy
-- **Search:** Postgres full-text search behind a `search` module that can be swapped out.
+- **Search:** headline and summary matching (every word must appear, newest first) in `src/lib/search.ts`, a module that can be swapped for full-text or a search service later. Results pages are noindexed, rate-limited per IP, send an origin-only referrer, and do not load GA4.
 - **Reader auth (Phase 2):** Supabase Auth. API routes verify the Supabase JWT, and row-level security (RLS) applies to reader tables.
 
 ## 7. SEO and GEO
