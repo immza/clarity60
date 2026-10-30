@@ -303,10 +303,6 @@ export interface Media {
   credit: string;
   license: 'own' | 'canva' | 'public-domain' | 'creative-commons' | 'ai-generated' | 'licensed';
   /**
-   * Still image shown before the video plays. Google lists videos in search only when they have one.
-   */
-  poster?: (number | null) | Media;
-  /**
    * Link to the original, required for Creative Commons.
    */
   sourceUrl?: string | null;
@@ -1045,7 +1041,6 @@ export interface MediaSelect<T extends boolean = true> {
   caption?: T;
   credit?: T;
   license?: T;
-  poster?: T;
   sourceUrl?: T;
   prefix?: T;
   _objectKey?: T;
@@ -1356,23 +1351,11 @@ export interface SiteSetting {
         id?: string | null;
       }[]
     | null;
-  /**
-   * Public contact address given to Google and AI engines as the publisher contact.
-   */
-  contactEmail: string;
-  /**
-   * Untick to stop sending FAQ markup site-wide. The FAQ sections stay visible on articles.
-   */
-  faqSchema?: boolean | null;
-  /**
-   * Full https:// profile links. Filled-in accounts appear in the footer (“Follow Clarity60”) and are listed to Google as Clarity60’s official profiles. Leave one empty to hide it.
-   */
   socials?: {
     instagram?: string | null;
-    facebook?: string | null;
     youtube?: string | null;
-    tiktok?: string | null;
     x?: string | null;
+    facebook?: string | null;
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1410,16 +1393,13 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         url?: T;
         id?: T;
       };
-  contactEmail?: T;
-  faqSchema?: T;
   socials?:
     | T
     | {
         instagram?: T;
-        facebook?: T;
         youtube?: T;
-        tiktok?: T;
         x?: T;
+        facebook?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -1487,24 +1467,6 @@ export interface ProductBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'product';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "FaqBlock".
- */
-export interface FaqBlock {
-  heading?: string | null;
-  /**
-   * Questions people actually search for. Start each answer with the direct answer.
-   */
-  items: {
-    question: string;
-    answer: string;
-    id?: string | null;
-  }[];
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'faq';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

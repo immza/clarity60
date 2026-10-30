@@ -10,6 +10,18 @@
 const OVERRIDE_PARAMS = ['host', 'hostaddr', 'port', 'ssl', 'sslmode', 'sslcert', 'sslkey', 'sslrootcert', 'sslnegotiation', 'uselibpqcompat']
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1'])
 
+/**
+ * Dashboards often flatten a pasted certificate onto one line (newlines become spaces or a
+ * literal "\n"). Rebuild the standard PEM layout so either form works.
+ */
+export const normalizePem = (pem: string) => {
+  const text = pem.replace(/\\n/g, '\n').trim()
+  return text.replace(/-----BEGIN ([A-Z ]+)-----([\s\S]*?)-----END \1-----/g, (_, label: string, body: string) => {
+    const base64 = body.replace(/\s+/g, '')
+    return `-----BEGIN ${label}-----\n${base64.match(/.{1,64}/g)?.join('\n') ?? ''}\n-----END ${label}-----`
+  })
+}
+
 export const databaseTls = (databaseUrl: string, caCert: string | undefined) => {
   if (!databaseUrl) return {}
   let url: URL
@@ -24,5 +36,5 @@ export const databaseTls = (databaseUrl: string, caCert: string | undefined) => 
   }
   if (LOCAL_HOSTS.has(url.hostname)) return {}
   if (!caCert) throw new Error('DATABASE_CA_CERT is required for a remote database (see docs/LAUNCH.md §1).')
-  return { ssl: { ca: caCert, rejectUnauthorized: true } }
+  return { ssl: { ca: normalizePem(caCert), rejectUnauthorized: true } }
 }
