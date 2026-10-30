@@ -150,6 +150,7 @@
   .promo--card .promo__media {
     /* A little larger than a story thumbnail, never double it, so stories stay the main thing. */
     flex: 0 0 min(40%, 240px);
+    min-width: 0;
   }
 }
 
