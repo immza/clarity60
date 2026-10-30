@@ -53,9 +53,11 @@
   height: 250px;
 }
 
-/* House promotions: a quiet notice, not a banner. */
+/* House promotions: a quiet notice, not a banner. The slot is the size container
+   the promo styles respond to. */
 .slot {
   margin: 28px 0;
+  container-type: inline-size;
 }
 
 .promo {
@@ -105,6 +107,82 @@
   display: inline-block;
   margin-top: 6px;
   text-decoration: none;
+}
+
+/* Banner, card and video promos never crop the image and never grow huge. Each one
+   sizes to the column it sits in, so it works in a 300px sidebar or a wide feed. */
+.promo--wide,
+.promo--card,
+.promo--video {
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0;
+}
+
+.promo__media {
+  position: relative;
+}
+
+/* The image keeps its own shape (width/height attributes reserve the space, so the page
+   never jumps); only its size is capped. */
+.promo__media img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+}
+
+/* Banner: the whole image above the text, at most 240px tall. */
+.promo--wide .promo__media img,
+.promo--card .promo__media img {
+  max-height: 240px;
+  border: 1px solid var(--rule-soft);
+}
+
+/* Card: image on the left, text beside it once there's room (stacked in a sidebar). */
+
+@container (min-width: 520px) {
+  .promo--card {
+    flex-direction: row;
+    align-items: center;
+    gap: 18px;
+  }
+  .promo--card .promo__media {
+    /* A little larger than a story thumbnail, never double it, so stories stay the main thing. */
+    flex: 0 0 min(40%, 240px);
+    min-width: 0;
+  }
+}
+
+/* Video: the 16:9 cover frame, no wider than a 240px-tall clip needs. */
+.promo--video .promo__media {
+  width: min(100%, calc(240px * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--rule-soft);
+  background: var(--paper-2);
+}
+
+.promo__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.promo__pause {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--paper);
+  background: rgba(10, 9, 7, 0.7);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
 .promo__cta {

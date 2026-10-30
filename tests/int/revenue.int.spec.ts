@@ -1,4 +1,5 @@
 import { getPayload, type Payload } from 'payload'
+import sharp from 'sharp'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { pickPromotion, withinDates } from '@/lib/promotions'
@@ -73,5 +74,54 @@ describe('affiliate links', () => {
         overrideAccess: true,
       }),
     ).rejects.toThrow()
+  })
+})
+
+describe('promotion styles', () => {
+  const promo = (style: 'notice' | 'card' | 'wide' | 'video') =>
+    payload.create({
+      collection: 'promotions',
+      data: { title: `Style ${style}`, headline: 'Read the paper', link: '/about', style },
+      overrideAccess: true,
+    })
+
+  it('defaults to the quiet notice style, which needs no image', async () => {
+    const created = await payload.create({
+      collection: 'promotions',
+      // No style given, to check the default; the generated type marks it required.
+      data: { title: 'Default style', headline: 'Read the paper', link: '/about' } as Promotion,
+      overrideAccess: true,
+    })
+    expect(created.style).toBe('notice')
+  })
+
+  it('card and banner need an image, and video needs a clip', async () => {
+    await expect(promo('wide')).rejects.toThrow(/image/i)
+    await expect(promo('card')).rejects.toThrow(/image/i)
+    await expect(promo('video')).rejects.toThrow(/video/i)
+  })
+
+  it('an image cannot be used as the video, and a wide promo accepts its image', async () => {
+    const data = await sharp({ create: { width: 16, height: 9, channels: 3, background: '#cccccc' } }).png().toBuffer()
+    const image = await payload.create({
+      collection: 'media',
+      data: { alt: 'Promo image', credit: 'Clarity60', license: 'own' },
+      file: { data, mimetype: 'image/png', name: 'promo-style-test.png', size: data.length },
+      overrideAccess: true,
+    })
+    try {
+      const base = { title: 'Media check', headline: 'Read the paper', link: '/about' }
+      await expect(
+        payload.create({ collection: 'promotions', data: { ...base, style: 'video', video: image.id }, overrideAccess: true }),
+      ).rejects.toThrow()
+      const wide = await payload.create({
+        collection: 'promotions',
+        data: { ...base, style: 'wide', image: image.id },
+        overrideAccess: true,
+      })
+      await payload.delete({ collection: 'promotions', id: wide.id, overrideAccess: true })
+    } finally {
+      await payload.delete({ collection: 'media', id: image.id, overrideAccess: true })
+    }
   })
 })

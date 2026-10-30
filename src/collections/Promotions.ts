@@ -1,6 +1,15 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, UploadFieldSingleValidation } from 'payload'
+import { upload } from 'payload/shared'
 
 import { anyone, editorsOnly } from '@/access/roles'
+
+/** Required only for one style; Payload's own upload check (incl. the image/video filter) still runs. */
+const requiredForStyle =
+  (styles: string[], message: string): UploadFieldSingleValidation =>
+  (value, options) => {
+    const style = (options.siblingData as { style?: string } | undefined)?.style
+    return style && styles.includes(style) && !value ? message : upload(value, options)
+  }
 
 /**
  * House promotions: small notices that fill an ad slot when no paid ad is running
@@ -43,7 +52,39 @@ export const Promotions: CollectionConfig = {
         }
       },
     },
-    { name: 'image', type: 'upload', relationTo: 'media', admin: { description: 'Optional small image.' } },
+    {
+      name: 'style',
+      type: 'select',
+      required: true,
+      defaultValue: 'notice',
+      options: [
+        { label: 'Notice: text with a small square thumbnail (quiet)', value: 'notice' },
+        { label: 'Card: image beside the text, whole and never cropped', value: 'card' },
+        { label: 'Banner: a wide strip showing the whole image, kept to a modest height', value: 'wide' },
+        { label: 'Video: short silent looping clip', value: 'video' },
+      ],
+    },
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      filterOptions: { mimeType: { like: 'image/' } },
+      admin: {
+        description: 'Notice: optional, cropped to a small square. Card and Banner: required, always shown whole, never cropped. Video: optional still shown before the clip plays.',
+      },
+      validate: requiredForStyle(['card', 'wide'], 'The Card and Banner styles need an image.'),
+    },
+    {
+      name: 'video',
+      type: 'upload',
+      relationTo: 'media',
+      filterOptions: { mimeType: { like: 'video/' } },
+      admin: {
+        condition: (_, s) => s?.style === 'video',
+        description: 'MP4 or WebM, ideally under 10 seconds and 5 MB. It plays muted on a loop, and only while on screen.',
+      },
+      validate: requiredForStyle(['video'], 'The Video style needs a video.'),
+    },
     {
       type: 'collapsible',
       label: 'Where and when',

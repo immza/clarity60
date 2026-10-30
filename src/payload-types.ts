@@ -579,10 +579,15 @@ export interface Promotion {
    * A page on this site (/advertise) or a full https:// link.
    */
   link: string;
+  style: 'notice' | 'card' | 'wide' | 'video';
   /**
-   * Optional small image.
+   * Notice: optional, cropped to a small square. Card and Banner: required, always shown whole, never cropped. Video: optional still shown before the clip plays.
    */
   image?: (number | null) | Media;
+  /**
+   * MP4 or WebM, ideally under 10 seconds and 5 MB. It plays muted on a loop, and only while on screen.
+   */
+  video?: (number | null) | Media;
   active?: boolean | null;
   /**
    * Leave empty to allow every slot.
@@ -1122,7 +1127,9 @@ export interface PromotionsSelect<T extends boolean = true> {
   text?: T;
   ctaLabel?: T;
   link?: T;
+  style?: T;
   image?: T;
+  video?: T;
   active?: T;
   slots?: T;
   sections?: T;
