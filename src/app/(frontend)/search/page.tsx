@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 
 import { Masthead } from '@/components/header/Masthead'
 import { SearchForm } from '@/components/header/SearchForm'
@@ -14,10 +15,12 @@ const pageNumber = (raw?: string) => Math.max(1, Math.min(100, Number.parseInt(r
 const queryOf = (raw?: string | string[]) => (Array.isArray(raw) ? raw[0] : raw)?.trim().slice(0, MAX_QUERY_LENGTH) ?? ''
 
 // Search results are thin, endless pages; Google asks sites to keep them out of the index.
+// Links away from a search send only our origin as the referrer, never the query.
 export const metadata: Metadata = {
   title: 'Search',
   description: 'Search every Clarity60 story.',
   robots: { index: false, follow: true },
+  referrer: 'origin',
 }
 
 export default async function SearchPage({ searchParams }: Props) {
@@ -26,6 +29,8 @@ export default async function SearchPage({ searchParams }: Props) {
   const page = pageNumber(params.page)
   const terms = searchTerms(q)
   const result = terms.length > 0 ? await searchArticles(terms, page) : null
+  // A page past the end (an old link, a hand-edited URL) goes back to the first page of results.
+  if (result && page > 1 && result.docs.length === 0) redirect(`/search?q=${encodeURIComponent(q)}`)
 
   return (
     <>

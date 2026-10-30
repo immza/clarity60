@@ -13,18 +13,22 @@ import { SearchForm } from './SearchForm'
  */
 export function SearchToggle() {
   const pathname = usePathname()
-  // Remember which page the box was opened on, so navigating (or searching) closes it.
-  const [openOn, setOpenOn] = useState<string | null>(null)
-  const open = openOn === pathname
+  const [open, setOpen] = useState(false)
+  // Navigating (or searching) closes the box: reset during render when the path changes.
+  const [seenPath, setSeenPath] = useState(pathname)
+  if (seenPath !== pathname) {
+    setSeenPath(pathname)
+    setOpen(false)
+  }
   const root = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenOn(null)
+      if (e.key === 'Escape') setOpen(false)
     }
     const onClick = (e: MouseEvent) => {
-      if (!root.current?.contains(e.target as Node)) setOpenOn(null)
+      if (!root.current?.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('keydown', onKey)
     document.addEventListener('mousedown', onClick)
@@ -45,7 +49,7 @@ export function SearchToggle() {
         prefetch={false}
         onClick={(e) => {
           e.preventDefault()
-          setOpenOn(open ? null : pathname)
+          setOpen((o) => !o)
         }}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">

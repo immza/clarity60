@@ -12,9 +12,16 @@ export function Analytics() {
   return (
     <>
       <Script src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`} strategy="afterInteractive" />
-      {/* Search pages report as plain /search, so readers' search words never reach Google. */}
+      {/* Search pages, and pages reached from one, report plain /search, so readers' search words never reach Google. */}
       <Script id="ga4-init" strategy="afterInteractive">
-        {`gtag('js', new Date()); gtag('config', ${JSON.stringify(id)}, Object.assign({ anonymize_ip: true }, location.pathname === '/search' ? { page_location: location.origin + '/search', page_title: 'Search' } : {}));`}
+        {`(function () {
+  var plain = location.origin + '/search';
+  var extra = {};
+  if (location.pathname === '/search') { extra.page_location = plain; extra.page_title = 'Search'; }
+  try { var ref = new URL(document.referrer); if (ref.origin === location.origin && ref.pathname === '/search') extra.page_referrer = plain; } catch (e) {}
+  gtag('js', new Date());
+  gtag('config', ${JSON.stringify(id)}, Object.assign({ anonymize_ip: true }, extra));
+})();`}
       </Script>
       <ConsentBanner />
     </>
