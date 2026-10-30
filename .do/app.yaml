@@ -54,7 +54,12 @@ services:
       - { key: INDEXNOW_KEY, scope: RUN_TIME, type: SECRET }                  # optional
       - { key: NEXT_PUBLIC_GA_ID, scope: RUN_AND_BUILD_TIME }                  # optional, when GA4 is ready
 
-# No custom domains here: Cloudflare proxies clarity60.com to the app's default
-# <app>.ondigitalocean.app hostname. Adding the domain to App Platform while Cloudflare
-# proxies it breaks certificate renewal (DigitalOcean docs, "Configure an external CDN").
-# Fallback if the proxied setup fails on launch day: see docs/LAUNCH.md §4.
+# App Platform serves the custom domains and issues their certificates. In Cloudflare
+# both records are CNAMEs to <app>.ondigitalocean.app set to DNS only (grey cloud):
+# App Platform already runs on Cloudflare's network and rejects a second, proxied
+# Cloudflare zone in front (error 526). See docs/LAUNCH.md §5.
+domains:
+  - domain: clarity60.com
+    type: PRIMARY
+  - domain: www.clarity60.com
+    type: ALIAS

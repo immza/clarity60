@@ -46,7 +46,7 @@ SEED_ADMIN_EMAIL='you@example.com' SEED_ADMIN_PASSWORD='<long unique password>' 
 1. Go to **Create App** → **GitHub** → `immza/clarity60`, branch `main`.
 2. Use the spec in `.do/app.yaml` (paste it under App Spec).
    - It sets region `sfo`, the $10 1 GiB instance, a health check at `/healthz`, and alerts.
-   - It deliberately adds **no custom domains**; see step 5.
+   - It lists the two custom domains; DigitalOcean issues their certificates (step 5).
 3. Fill in every env var marked `SECRET` in the spec. `PAYLOAD_SECRET` must be the same value used in step 3.
 4. Deploy.
    - **Check:** `https://<app>.ondigitalocean.app/healthz` returns `{"ok":true}`.
@@ -54,32 +54,16 @@ SEED_ADMIN_EMAIL='you@example.com' SEED_ADMIN_PASSWORD='<long unique password>' 
 
 ## 5. Cloudflare
 
-1. **DNS:**
+1. **App Platform → Networking → Domains:** add `clarity60.com` (primary) and `www.clarity60.com`, choosing **You manage your domain**.
+2. **Cloudflare DNS:**
    - Replace the Namecheap parking **A** record and the `www` **CNAME**.
-   - New records: `clarity60.com` **CNAME** `<app>.ondigitalocean.app`, and `www` **CNAME** `clarity60.com`.
-   - Keep both **Proxied** (orange cloud).
-   - **Do not add the domain inside App Platform**: with Cloudflare proxying, that breaks DigitalOcean's certificate renewal.
-2. **SSL/TLS:**
-   - Mode: **Full (strict)**.
-   - Turn on **Always Use HTTPS**.
-   - Set minimum TLS to **1.2**.
-3. **Test it:** `https://clarity60.com/healthz` should return `{"ok":true}`.
-   - **If it returns a 403/404 or error page:** DigitalOcean is not accepting the proxied hostname (Cloudflare's free plan can't rewrite the `Host` header). Use the fallback:
-     1. Add both `clarity60.com` and `www.clarity60.com` as custom domains in App Platform.
-     2. Set both Cloudflare records to **DNS only** (grey cloud) so App Platform can issue and renew its certificates.
-     3. Leave them grey. App Platform's own CDN and DDoS protection then front the site, and Cloudflare provides DNS and email only.
-     4. **What the fallback loses:** Cloudflare's WAF rate-limit rule, its page caching, AI Crawl Control and traffic analytics. **What still works:** the app's own login rate limit and account lockout, security headers, `www` → `clarity60.com` redirect (the app does it), HTTPS, and DigitalOcean's edge caching.
-     5. Continue with step 4; skip steps 5–7 (they need the orange cloud).
+   - New records: `clarity60.com` **CNAME** `<app>.ondigitalocean.app`, and `www` **CNAME** `<app>.ondigitalocean.app`.
+   - Set both to **DNS only** (grey cloud). App Platform already runs on Cloudflare's network; a proxied (orange) record in front of it fails with error 526.
+   - Keep the MX and TXT records (email forwarding).
+   - App Platform's own CDN and DDoS protection front the site, and it issues and renews the certificates. The app's login rate limit and account lockout, security headers, `www` → `clarity60.com` redirect and HTTPS all apply. Cloudflare's WAF rule, page caching, AI Crawl Control and traffic analytics need the orange cloud, so they are not used.
+3. **Test it:** `https://clarity60.com/healthz` should return `{"ok":true}`, usually within minutes once the domains show **Active**.
 4. **Log in and secure the admin:** go to `https://clarity60.com/admin`, sign in as the Super Admin from step 3, **change the password**, and set up 2FA. Save the authenticator backup.
-5. **Optional: Rules → Redirect Rules.** The app already redirects `www` to `clarity60.com`; this only saves a round trip.
-   - When the hostname equals `www.clarity60.com`, do a **Dynamic** redirect to `concat("https://clarity60.com", http.request.uri.path)`.
-   - Status **301**, **preserve query string** on.
-6. **Security → WAF → Rate limiting** (the free plan allows 1 rule):
-   - URI path equals `/api/users/login`, 10 requests per 10 seconds per IP → Block.
-7. **Caching:**
-   - Leave the defaults; the app sends its own cache headers.
-   - **Do not** cache `/admin*` or `/api/*`.
-8. **Email Routing** (optional): `hello@` → Gmail.
+5. **Email Routing** (optional): `hello@` → Gmail.
 
 ## 6. After going live
 

@@ -1,6 +1,6 @@
 /**
  * Small in-memory fixed-window rate limiter. The app runs as a single container, so a
- * process-local map is enough; Cloudflare's firewall rule adds an edge limit on top.
+ * process-local map is enough.
  */
 type Bucket = { count: number; resetAt: number }
 
