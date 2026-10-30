@@ -20,8 +20,8 @@
   - Category, tag, author and article pages.
   - Search.
 - **Front Page modules**
-  - **The Latest:** 5 newest one-liners, filled automatically (replaces Today's Brief).
-  - **The Wire:** a ticker showing the latest headline per region, filled automatically.
+  - **The Latest** (labelled "News in brief"): the 5 newest World News one-liners, filled automatically (replaces Today's Brief).
+  - **Around the World** (the ticker; name editable in Site Settings): the latest headline per region, filled automatically.
   - **Developing story timeline** on news articles.
   - **Most Read:** sitewide and per section.
   - **Corrections box.**
@@ -192,7 +192,7 @@ Sections, categories, sub-categories and navigation are all edited in the admin;
 
 ## 10. Assumptions
 
-1. Column inches and reading time are computed from word count: 1 column inch per 150 words, 230 words per minute.
+1. Reading time is computed from word count at 230 words per minute and shown as "N min read". (Column inches, 1 per 150 words, are still stored but no longer shown: readers found "min read" clearer.)
 2. Comment depth is unlimited in data; the visual indent is capped at level 4.
 3. Slugs are unique per section.
 4. Each article has one primary category, plus tags.

@@ -368,7 +368,7 @@
   border-bottom-color: var(--rule-soft);
 }
 
-/* The Wire: one headline per region, scrolling like a ticker */
+/* Around the World ticker: one headline per region, scrolling like a ticker */
 .wire {
   display: flex;
   align-items: stretch;
@@ -377,7 +377,12 @@
 }
 
 .wire__label {
-  flex: none;
+  /* An editable name: it may wrap onto two lines but never takes more than half the
+     strip, so headlines always have room even on tiny screens. */
+  flex: 0 1 auto;
+  max-width: 50%;
+  overflow-wrap: break-word;
+  line-height: 1.1;
   display: flex;
   align-items: center;
   padding: 8px 12px;

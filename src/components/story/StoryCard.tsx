@@ -14,12 +14,8 @@ export function StoryMeta({ article }: { article: CardArticle }) {
   return (
     <p className="story__meta">
       {article.publishedAt && <RelativeTime iso={article.publishedAt} />}
-      {article.publishedAt && article.columnInches ? ' · ' : null}
-      {article.columnInches ? (
-        <span>
-          {article.columnInches} column {article.columnInches === 1 ? 'inch' : 'inches'}
-        </span>
-      ) : null}
+      {article.publishedAt && article.readingMinutes ? ' · ' : null}
+      {article.readingMinutes ? <span>{article.readingMinutes} min read</span> : null}
     </p>
   )
 }

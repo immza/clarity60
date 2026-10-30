@@ -42,6 +42,14 @@ export const SiteSettings: GlobalConfig = {
   fields: [
     { name: 'tagline', type: 'text', required: true, defaultValue: 'The world, explained.' },
     {
+      name: 'tickerLabel',
+      type: 'text',
+      required: true,
+      defaultValue: 'Around the World',
+      maxLength: 24,
+      admin: { description: 'Name of the scrolling headline strip on the front page.' },
+    },
+    {
       name: 'inFeedAdEvery',
       type: 'number',
       required: true,

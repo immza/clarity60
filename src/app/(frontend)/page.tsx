@@ -45,7 +45,7 @@ export default async function FrontPage() {
       <main id="main" className="wrap front">
         <div className="front__top">
           <section className="front__brief" aria-labelledby="brief-title">
-            <p className="kicker">Today’s brief</p>
+            <p className="kicker">News in brief</p>
             <h2 id="brief-title" className="front__col-title">
               The Latest
             </h2>
@@ -74,7 +74,7 @@ export default async function FrontPage() {
           {lead && (
             <section className="front__lead" aria-labelledby="lead-title">
               <p className="kicker">
-                The Long Read{lead.columnInches ? ` · ${lead.columnInches} column inches` : ''}
+                The Long Read{lead.readingMinutes ? ` · ${lead.readingMinutes} min read` : ''}
               </p>
               <h2 id="lead-title" className="front__lead-title">
                 <Link href={lead.path ?? '#'} prefetch={false}>

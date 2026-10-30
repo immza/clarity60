@@ -97,7 +97,8 @@ export default buildConfig({
   globals: [{ ...SiteSettings, hooks: { afterChange: [revalidateGlobal(TAGS.settings)] } }],
   editor,
   secret: process.env.PAYLOAD_SECRET || '',
-  typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
+  // Tests run with 2FA off, so they must not rewrite the types (that would drop hasTotp).
+  typescript: { outputFile: path.resolve(dirname, 'payload-types.ts'), autoGenerate: !process.env.VITEST },
   db: postgresAdapter({
     pool: { connectionString: databaseUrl, ...databaseTls(databaseUrl, process.env.DATABASE_CA_CERT) },
     // Local dev syncs the schema directly; production applies committed migrations on boot.
