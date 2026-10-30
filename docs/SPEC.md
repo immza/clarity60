@@ -20,7 +20,7 @@
   - Category, tag, author and article pages.
   - Search.
 - **Front Page modules**
-  - **The Latest:** 5 newest one-liners, filled automatically (replaces Today's Brief).
+  - **The Latest** (labelled "News in brief"): the 5 newest World News one-liners, filled automatically (replaces Today's Brief).
   - **Around the World** (the ticker; name editable in Site Settings): the latest headline per region, filled automatically.
   - **Developing story timeline** on news articles.
   - **Most Read:** sitewide and per section.
