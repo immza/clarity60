@@ -150,12 +150,7 @@ export async function ArticleView({ article }: { article: Article }) {
                   </>
                 )}
               </span>
-              {article.columnInches ? (
-                <span className="article__length">
-                  {article.columnInches} column {article.columnInches === 1 ? 'inch' : 'inches'} ·{' '}
-                  {article.readingMinutes} min read
-                </span>
-              ) : null}
+              {article.readingMinutes ? <span className="article__length">{article.readingMinutes} min read</span> : null}
             </div>
             {article.hasAffiliateLinks && (
               <p className="article__disclosure">

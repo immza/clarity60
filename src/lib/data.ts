@@ -116,7 +116,6 @@ export const CARD_SELECT = {
   summary: true,
   path: true,
   publishedAt: true,
-  columnInches: true,
   readingMinutes: true,
   heroMedia: true,
   category: true,

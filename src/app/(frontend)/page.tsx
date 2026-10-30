@@ -74,7 +74,7 @@ export default async function FrontPage() {
           {lead && (
             <section className="front__lead" aria-labelledby="lead-title">
               <p className="kicker">
-                The Long Read{lead.columnInches ? ` · ${lead.columnInches} column inches` : ''}
+                The Long Read{lead.readingMinutes ? ` · ${lead.readingMinutes} min read` : ''}
               </p>
               <h2 id="lead-title" className="front__lead-title">
                 <Link href={lead.path ?? '#'} prefetch={false}>
