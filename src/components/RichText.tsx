@@ -3,7 +3,7 @@ import { type JSXConvertersFunction, RichText as LexicalRichText } from '@payloa
 import type { ReactNode } from 'react'
 
 import { MediaImage } from '@/components/media/MediaImage'
-import type { AffiliateLink, Media, ProductBlock } from '@/payload-types'
+import type { AffiliateLink, FaqBlock, Media, ProductBlock } from '@/payload-types'
 
 type LinkFields = {
   url?: string
@@ -66,6 +66,21 @@ const makeConverters =
         )
       },
       blocks: {
+        faq: ({ node }: { node: { fields: FaqBlock } }) => {
+          const f = node.fields
+          if (!f.items?.length) return null
+          return (
+            <section className="faq">
+              <h2 className="faq__heading">{f.heading || 'Questions answered'}</h2>
+              {f.items.map((item) => (
+                <div key={item.id ?? item.question} className="faq__item">
+                  <h3 className="faq__question">{item.question}</h3>
+                  <p className="faq__answer">{item.answer}</p>
+                </div>
+              ))}
+            </section>
+          )
+        },
         product: ({ node }: { node: { fields: ProductBlock } }) => {
           const f = node.fields
           const link = f.affiliateLink && typeof f.affiliateLink === 'object' ? f.affiliateLink : null

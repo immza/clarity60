@@ -5,7 +5,7 @@ import { Masthead } from '@/components/header/Masthead'
 import { MediaImage } from '@/components/media/MediaImage'
 import { StoryCard } from '@/components/story/StoryCard'
 import { StoryList } from '@/components/story/StoryList'
-import { getSections, listArticles, type CardArticle } from '@/lib/data'
+import { getSections, getSiteSettings, listArticles, type CardArticle } from '@/lib/data'
 import { jsonLd, organization, websiteSchema } from '@/lib/schema'
 
 import './front.css'
@@ -13,7 +13,7 @@ import './front.css'
 const catName = (a: CardArticle) => (a.category && typeof a.category === 'object' ? a.category.name : '')
 
 export default async function FrontPage() {
-  const sections = await getSections()
+  const [sections, settings] = await Promise.all([getSections(), getSiteSettings()])
   const newsSection = sections.find((s) => s.kind === 'news')
   const evergreenSection = sections.find((s) => s.kind === 'evergreen')
 
@@ -39,7 +39,7 @@ export default async function FrontPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(websiteSchema())} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={jsonLd({ '@context': 'https://schema.org', ...organization() })}
+        dangerouslySetInnerHTML={jsonLd({ '@context': 'https://schema.org', ...organization(settings) })}
       />
       <Masthead variant="front" />
       <main id="main" className="wrap front">

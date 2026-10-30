@@ -4,8 +4,8 @@ import { AdSlot } from '@/components/ads/AdSlot'
 import { MediaImage } from '@/components/media/MediaImage'
 import { RichText } from '@/components/RichText'
 import { StoryCard } from '@/components/story/StoryCard'
-import { getCorrectionsFor, listArticles } from '@/lib/data'
-import { articleSchema, breadcrumbSchema, jsonLd } from '@/lib/schema'
+import { getCorrectionsFor, getSiteSettings, listArticles } from '@/lib/data'
+import { articleSchema, breadcrumbSchema, faqSchema, jsonLd } from '@/lib/schema'
 import type { Article, Author, Category, Media, Section, Tag } from '@/payload-types'
 
 import './article.css'
@@ -50,7 +50,14 @@ function Hero({ media }: { media: Media }) {
   return (
     <figure className="article__hero">
       {isVideo && media.url ? (
-        <video controls preload="metadata" playsInline width={media.width ?? undefined} height={media.height ?? undefined}>
+        <video
+          controls
+          preload="metadata"
+          playsInline
+          width={media.width ?? undefined}
+          height={media.height ?? undefined}
+          poster={media.poster && typeof media.poster === 'object' ? (media.poster.url ?? undefined) : undefined}
+        >
           <source src={media.url} type={media.mimeType ?? undefined} />
         </video>
       ) : (
@@ -85,10 +92,12 @@ export async function ArticleView({ article }: { article: Article }) {
     },
   ]
 
-  const [corrections, more] = await Promise.all([
+  const [corrections, more, settings] = await Promise.all([
     getCorrectionsFor(article.id),
     listArticles({ categoryIds: [category.id], excludeIds: [article.id], limit: 4 }),
+    getSiteSettings(),
   ])
+  const faq = faqSchema(article, settings)
 
   const sponsor = article.sponsorship?.isSponsored ? article.sponsorship : null
   const slotContext = { sectionId: section.id, categoryIds: [category.id, ...(parent ? [parent.id] : [])] }
@@ -98,7 +107,8 @@ export async function ArticleView({ article }: { article: Article }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(articleSchema(article))} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(articleSchema(article, settings))} />
+      {faq && <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(faq)} />}
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(breadcrumbSchema(crumbs))} />
 
       <main id="main" className="wrap article-layout">

@@ -84,8 +84,29 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
     {
+      type: 'collapsible',
+      label: 'Search engines and AI (structured data)',
+      fields: [
+        {
+          name: 'contactEmail',
+          type: 'email',
+          required: true,
+          defaultValue: 'hello@clarity60.com',
+          admin: { description: 'Public contact address given to Google and AI engines as the publisher contact.' },
+        },
+        {
+          name: 'faqSchema',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'Describe FAQ blocks to search engines (FAQPage structured data)',
+          admin: { description: 'Untick to stop sending FAQ markup site-wide. The FAQ sections stay visible on articles.' },
+        },
+      ],
+    },
+    {
       name: 'socials',
       type: 'group',
+      admin: { description: 'Filled-in accounts are linked from the site and listed to Google as Clarity60’s official profiles.' },
       fields: [
         { name: 'instagram', type: 'text', defaultValue: 'https://www.instagram.com/theclarity60/' },
         { name: 'youtube', type: 'text' },

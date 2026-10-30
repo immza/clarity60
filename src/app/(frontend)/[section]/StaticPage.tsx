@@ -1,5 +1,6 @@
 import { Masthead } from '@/components/header/Masthead'
 import { RichText } from '@/components/RichText'
+import { jsonLd, webPageSchema } from '@/lib/schema'
 import type { Page } from '@/payload-types'
 
 import '@/components/article/article.css'
@@ -8,6 +9,7 @@ import '@/components/article/article.css'
 export function StaticPage({ page }: { page: Page }) {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(webPageSchema(page))} />
       <Masthead variant="compact" />
       <main id="main" className="wrap article-layout">
         <article className="article">

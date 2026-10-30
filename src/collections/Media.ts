@@ -67,6 +67,16 @@ export const Media: CollectionConfig = {
       ],
     },
     {
+      name: 'poster',
+      type: 'upload',
+      relationTo: 'media',
+      filterOptions: { mimeType: { like: 'image/' } },
+      admin: {
+        condition: (data) => Boolean(data?.mimeType?.startsWith('video/')),
+        description: 'Still image shown before the video plays. Google lists videos in search only when they have one.',
+      },
+    },
+    {
       name: 'sourceUrl',
       type: 'text',
       admin: { description: 'Link to the original, required for Creative Commons.' },
