@@ -40,7 +40,7 @@ function HousePromo({ promo }: { promo: Promotion }) {
             alt=""
             width={image!.width ?? 1200}
             height={image!.height ?? 675}
-            sizes={style === 'card' ? '320px' : '(min-width: 1000px) 760px, 100vw'}
+            sizes={style === 'card' ? '240px' : '(min-width: 1000px) 760px, 100vw'}
           />
         </div>
       )}
