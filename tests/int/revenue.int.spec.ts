@@ -75,3 +75,26 @@ describe('affiliate links', () => {
     ).rejects.toThrow()
   })
 })
+
+describe('promotion styles', () => {
+  const promo = (style: 'notice' | 'wide' | 'video') =>
+    payload.create({
+      collection: 'promotions',
+      data: { title: `Style ${style}`, headline: 'Read the paper', link: '/about', style },
+      overrideAccess: true,
+    })
+
+  it('defaults to the quiet notice style, which needs no image', async () => {
+    const created = await payload.create({
+      collection: 'promotions',
+      data: { title: 'Default style', headline: 'Read the paper', link: '/about' },
+      overrideAccess: true,
+    })
+    expect(created.style).toBe('notice')
+  })
+
+  it('wide needs an image and video needs a clip', async () => {
+    await expect(promo('wide')).rejects.toThrow(/image/i)
+    await expect(promo('video')).rejects.toThrow(/video/i)
+  })
+})

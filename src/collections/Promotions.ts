@@ -43,7 +43,40 @@ export const Promotions: CollectionConfig = {
         }
       },
     },
-    { name: 'image', type: 'upload', relationTo: 'media', admin: { description: 'Optional small image.' } },
+    {
+      name: 'style',
+      type: 'select',
+      required: true,
+      defaultValue: 'notice',
+      options: [
+        { label: 'Notice: text with a small square thumbnail (quiet)', value: 'notice' },
+        { label: 'Wide: full-width image, same shape as article covers', value: 'wide' },
+        { label: 'Video: short silent looping clip', value: 'video' },
+      ],
+    },
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      filterOptions: { mimeType: { like: 'image/' } },
+      admin: {
+        description: 'Notice: optional, cropped to a small square. Wide: required, shown 16:9. Video: optional still shown before the clip plays.',
+      },
+      validate: (value: unknown, { siblingData }: { siblingData: Partial<{ style: string }> }) =>
+        siblingData?.style === 'wide' && !value ? 'The Wide style needs an image.' : true,
+    },
+    {
+      name: 'video',
+      type: 'upload',
+      relationTo: 'media',
+      filterOptions: { mimeType: { like: 'video/' } },
+      admin: {
+        condition: (_, s) => s?.style === 'video',
+        description: 'MP4 or WebM, ideally under 10 seconds and 5 MB. It plays muted on a loop, and only while on screen.',
+      },
+      validate: (value: unknown, { siblingData }: { siblingData: Partial<{ style: string }> }) =>
+        siblingData?.style === 'video' && !value ? 'The Video style needs a video.' : true,
+    },
     {
       type: 'collapsible',
       label: 'Where and when',

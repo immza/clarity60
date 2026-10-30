@@ -6,6 +6,7 @@ import { getActivePromotions, getAdSlot } from '@/lib/data'
 import { pickPromotion, withinDates, type SlotContext } from '@/lib/promotions'
 import type { Media, Promotion } from '@/payload-types'
 
+import { PromoVideo } from './PromoVideo'
 import './ads.css'
 
 const adsenseReady = Boolean(process.env.NEXT_PUBLIC_ADSENSE_CLIENT)
@@ -14,7 +15,10 @@ const adsenseReady = Boolean(process.env.NEXT_PUBLIC_ADSENSE_CLIENT)
 const shownThisPage = cache(() => new Set<number>())
 
 function HousePromo({ promo }: { promo: Promotion }) {
-  const image = promo.image && typeof promo.image === 'object' ? (promo.image as Media) : null
+  const asMedia = (m: Promotion['image']) => (m && typeof m === 'object' && m.url ? (m as Media) : null)
+  const image = asMedia(promo.image)
+  const video = asMedia(promo.video)
+  const style = promo.style === 'video' && video ? 'video' : promo.style === 'wide' && image ? 'wide' : 'notice'
   const external = /^https?:\/\//.test(promo.link)
   const paid = /sponsor|partner|advert/i.test(promo.label ?? '')
   const cta = (
@@ -23,11 +27,28 @@ function HousePromo({ promo }: { promo: Promotion }) {
     </span>
   )
   return (
-    <aside className="promo" aria-label={promo.label || 'From Clarity60'}>
-      {image?.url && (
-        <Image src={image.url} alt="" width={72} height={72} className="promo__image" sizes="72px" />
+    <aside className={`promo promo--${style}`} aria-label={promo.label || 'From Clarity60'}>
+      {style === 'notice' && image && (
+        <Image src={image.url!} alt="" width={72} height={72} className="promo__image" sizes="72px" />
       )}
-      <div>
+      {style === 'wide' && (
+        <div className="promo__media">
+          <Image
+            src={image!.url!}
+            alt=""
+            width={image!.width ?? 1200}
+            height={image!.height ?? 675}
+            sizes="(min-width: 1000px) 760px, 100vw"
+            style={{ objectPosition: `${image!.focalX ?? 50}% ${image!.focalY ?? 50}%` }}
+          />
+        </div>
+      )}
+      {style === 'video' && (
+        <div className="promo__media">
+          <PromoVideo src={video!.url!} type={video!.mimeType ?? undefined} poster={image?.url ?? undefined} />
+        </div>
+      )}
+      <div className="promo__body">
         <p className="promo__label">{promo.label || 'From Clarity60'}</p>
         <p className="promo__headline">{promo.headline}</p>
         {promo.text && <p className="promo__text">{promo.text}</p>}
