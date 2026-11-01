@@ -8,6 +8,8 @@
  *
  * When AdSense is switched on, add its hosts to ADS below (see docs/SPEC.md §7b).
  */
+import { EMBED_FRAME_HOSTS } from './embeds'
+
 const isDev = process.env.NODE_ENV !== 'production'
 
 const GOOGLE_ANALYTICS = [
@@ -26,7 +28,8 @@ const csp = [
   `font-src 'self' data:`,
   `media-src 'self' blob: ${IMAGES.join(' ')}`,
   `connect-src 'self' ${[...GOOGLE_ANALYTICS, ...ADS].join(' ')}${isDev ? ' ws:' : ''}`,
-  `frame-src 'self' ${ADS.join(' ')}`.trim(),
+  // Embedded social posts load only after the reader taps them (see components/embed).
+  `frame-src 'self' ${[...EMBED_FRAME_HOSTS, ...ADS].join(' ')}`,
   `worker-src 'self' blob:`,
   `object-src 'none'`,
   `base-uri 'self'`,

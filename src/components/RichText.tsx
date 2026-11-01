@@ -2,8 +2,10 @@ import type { SerializedEditorState, SerializedLexicalNode } from '@payloadcms/r
 import { type JSXConvertersFunction, RichText as LexicalRichText } from '@payloadcms/richtext-lexical/react'
 import type { ReactNode } from 'react'
 
+import { EmbedCard } from '@/components/embed/EmbedCard'
 import { MediaImage } from '@/components/media/MediaImage'
-import type { AffiliateLink, FaqBlock, Media, ProductBlock } from '@/payload-types'
+import { parseEmbed } from '@/lib/embeds'
+import type { AffiliateLink, EmbedBlock, FaqBlock, Media, ProductBlock } from '@/payload-types'
 
 type LinkFields = {
   url?: string
@@ -66,7 +68,11 @@ const makeConverters =
         )
       },
       blocks: {
-        faq: ({ node }: { node: { fields: FaqBlock } }) => {
+        embed: ({ node }: { node: { fields: EmbedBlock } }) => {
+          const embed = parseEmbed(node.fields.url)
+          return embed ? <EmbedCard embed={embed} caption={node.fields.caption} /> : null
+        },
+        faq:({ node }: { node: { fields: FaqBlock } }) => {
           const f = node.fields
           if (!f.items?.length) return null
           return (

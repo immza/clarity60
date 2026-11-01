@@ -1,5 +1,6 @@
 import { BlocksFeature, LinkFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 
+import { EmbedBlock } from './blocks/Embed'
 import { FaqBlock } from './blocks/Faq'
 import { ProductBlock } from './blocks/Product'
 
@@ -8,6 +9,7 @@ import { ProductBlock } from './blocks/Product'
  * - links that can point at articles, pages or Affiliate Links, with a "sponsored" flag
  * - the "Recommended product" block for affiliate content
  * - the optional "FAQ" block (questions answered), which also feeds FAQPage structured data
+ * - the "Embed post" block for X, Instagram, YouTube and TikTok posts (loaded on tap)
  */
 export const editor = lexicalEditor({
   features: ({ defaultFeatures }) => [
@@ -24,6 +26,6 @@ export const editor = lexicalEditor({
         },
       ],
     }),
-    BlocksFeature({ blocks: [ProductBlock, FaqBlock] }),
+    BlocksFeature({ blocks: [EmbedBlock, ProductBlock, FaqBlock] }),
   ],
 })
