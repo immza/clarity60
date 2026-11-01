@@ -50,6 +50,7 @@ describe('embedded posts', () => {
       'https://x.com/RT_com/status/abc',
       'https://www.instagram.com/deannaskitchensg/',
       'https://www.youtube.com/@channel',
+      'https://youtu.be/abc',
       'https://vm.tiktok.com/ZMabc123/',
       'https://example.com/p/abc',
       'https://x.com.evil.com/a/status/1',

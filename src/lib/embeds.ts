@@ -81,7 +81,8 @@ export const parseEmbed = (input: string | null | undefined): Embed | null => {
       id = parts[1]
       vertical = parts[0] === 'shorts'
     }
-    if (!id || !ID.test(id)) return null
+    // YouTube video ids are always 11 characters.
+    if (!id || !/^[\w-]{11}$/.test(id)) return null
     return {
       platform: 'youtube',
       name: 'YouTube',
