@@ -1470,6 +1470,23 @@ export interface TaskSchedulePublish {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EmbedBlock".
+ */
+export interface EmbedBlock {
+  /**
+   * Paste the link to one post on X (Twitter), Instagram, YouTube or TikTok.
+   */
+  url: string;
+  /**
+   * One line on what the post shows, e.g. "CCTV footage shared by the restaurant." Shown on the card, and read by Google and AI search, which can’t see inside embeds.
+   */
+  caption?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'embed';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ProductBlock".
  */
 export interface ProductBlock {
