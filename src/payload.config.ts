@@ -136,8 +136,10 @@ export default buildConfig({
         media: {
           prefix: 'media',
           disablePayloadAccessControl: true,
+          // Trimmed: a stray space pasted into the dashboard value turns every share image
+          // into a broken link, while browsers quietly ignore it on the page itself.
           generateFileURL: ({ filename, prefix }) =>
-            `${(process.env.IMAGEKIT_URL_ENDPOINT || '').replace(/\/$/, '')}/${prefix ? `${prefix}/` : ''}${filename}`,
+            `${(process.env.IMAGEKIT_URL_ENDPOINT || '').trim().replace(/\/$/, '')}/${prefix ? `${prefix}/` : ''}${filename}`,
         },
       },
       config: {
