@@ -14,11 +14,13 @@ const REVALIDATE = 3600
 export const escapeXml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 
+// The hosting CDN may serve a stale copy for stale-while-revalidate seconds after
+// s-maxage, and publishing does not clear it, so both stay short.
 export const xmlResponse = (body: string, maxAge = 900) =>
   new Response(body, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': `public, max-age=0, s-maxage=${maxAge}, stale-while-revalidate=86400`,
+      'Cache-Control': `public, max-age=0, s-maxage=${maxAge}, stale-while-revalidate=300`,
     },
   })
 
