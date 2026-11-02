@@ -112,15 +112,18 @@ export default async function SectionPage({ params, searchParams }: Props) {
                 <StoryCard article={top} variant={isNews ? 'lead' : 'feature'} headingLevel={2} priority />
               </div>
             )}
-            <StoryList
-              stories={result.docs}
-              basePath={`/${section.slug}`}
-              page={page}
-              totalPages={result.totalPages}
-              adKey="section-in-feed"
-              variant={isNews ? 'list' : 'grid'}
-              emptyText={`No ${section.name} stories yet. Check back soon.`}
-            />
+            {/* With the only story in the top slot, the list is empty but the desk is not. */}
+            {(result.docs.length > 0 || !top) && (
+              <StoryList
+                stories={result.docs}
+                basePath={`/${section.slug}`}
+                page={page}
+                totalPages={result.totalPages}
+                adKey="section-in-feed"
+                variant={isNews ? 'list' : 'grid'}
+                emptyText={`No ${section.name} stories yet. Check back soon.`}
+              />
+            )}
           </div>
 
           {isNews && (
