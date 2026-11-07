@@ -40,8 +40,12 @@ jobs:
         run: |
           FILE=$(find backup -name '*.dump.enc' | head -1)
           openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in "$FILE" -out db.dump -pass env:BACKUP_PASSPHRASE
-          docker run --rm --network host -v "$PWD:/b" postgres:17 \
-            pg_restore --no-owner --no-privileges --dbname postgresql://postgres:drill@localhost:5432/drill /b/db.dump
+          # Same steps as scripts/restore-backup.sh: skip CREATE SCHEMA public, which every new
+          # database already has, and stop on any error, so a pass proves a real recovery works.
+          docker run --rm --network host -v "$PWD:/b" postgres:17 sh -c "
+            pg_restore --list /b/db.dump | grep -v ' SCHEMA - public ' > /b/restore.list &&
+            pg_restore --use-list=/b/restore.list --no-owner --no-privileges --single-transaction --exit-on-error \
+              --dbname postgresql://postgres:drill@localhost:5432/drill /b/db.dump"
 
       - name: Check the restored data
         run: |

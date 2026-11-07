@@ -43,6 +43,9 @@ if [ "$TABLES" != "0" ]; then
   exit 1
 fi
 
+# The dump creates the public schema, which every new database already has, so skip that entry.
+"${PG[@]}" pg_restore --list /backup/db.dump | grep -v ' SCHEMA - public ' > "$TMP/restore.list"
+
 # All-or-nothing: any error rolls the whole restore back.
-"${PG[@]}" pg_restore --no-owner --no-privileges --single-transaction --exit-on-error --dbname "$TARGET_URL" /backup/db.dump
+"${PG[@]}" pg_restore --use-list=/backup/restore.list --no-owner --no-privileges --single-transaction --exit-on-error --dbname "$TARGET_URL" /backup/db.dump
 echo "Restored $ENC_FILE. Check it, then point DATABASE_URL at this database."
