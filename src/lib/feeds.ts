@@ -2,6 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { getPayload, type Where } from 'payload'
 
 import { TAGS } from '@/lib/cacheTags'
+import { FALLBACK_REVALIDATE as REVALIDATE } from '@/lib/data'
 import config from '@/payload.config'
 
 /**
@@ -9,7 +10,6 @@ import config from '@/payload.config'
  * something is published (same tags as the pages).
  */
 const payload = () => getPayload({ config })
-const REVALIDATE = 3600
 
 export const escapeXml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
@@ -105,7 +105,7 @@ export const getRecentArticles = unstable_cache(
     return res.docs
   },
   ['feed-recent'],
-  { tags: [TAGS.articles], revalidate: 600 },
+  { tags: [TAGS.articles], revalidate: REVALIDATE },
 )
 
 /** Structure URLs: sections, categories, tags, authors, published pages. */

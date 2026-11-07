@@ -4,8 +4,9 @@ import { getPayload, type Where } from 'payload'
 import { TAGS } from '@/lib/cacheTags'
 import config from '@/payload.config'
 
-// Pages are cached until something is published; this is only a safety net.
-const FALLBACK_REVALIDATE = 3600
+// Publishing clears these caches at once. Scheduled publishes can't, so this timed refresh
+// is what brings them to the site; refreshes only happen when someone visits.
+export const FALLBACK_REVALIDATE = 300
 
 const payload = () => getPayload({ config })
 
