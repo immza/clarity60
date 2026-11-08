@@ -5,15 +5,24 @@ import { useSyncExternalStore } from 'react'
 const MIN = 60_000
 const HOUR = 60 * MIN
 
-const absolute = (d: Date, timeZone?: string) =>
-  new Intl.DateTimeFormat('en-GB', {
+/**
+ * "8 Nov, 14:05 UTC". Assembled from parts because browsers join them differently (Safari
+ * writes "8 Nov at 14:05"), and a server/browser mismatch makes React rebuild the page.
+ */
+export const absolute = (d: Date, timeZone?: string) => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
+    hourCycle: 'h23',
     timeZone,
     timeZoneName: 'short',
-  }).format(d)
+  }).formatToParts(d)
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? ''
+  return `${get('day')} ${get('month')}, ${get('hour')}:${get('minute')} ${get('timeZoneName')}`
+}
 
 const forReader = (d: Date) => {
   const diff = Date.now() - d.getTime()
