@@ -21,8 +21,9 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const section = await getSectionBySlug(slug)
   if (!section) {
     const page = await getPage(slug)
+    // The SEO title already ends in "· Clarity60", so skip the layout's suffix (as articles do).
     return page
-      ? { title: page.meta?.title || page.title, description: page.meta?.description ?? undefined, alternates: { canonical: `/${page.slug}` } }
+      ? { title: { absolute: page.meta?.title || `${page.title} · Clarity60` }, description: page.meta?.description ?? undefined, alternates: { canonical: `/${page.slug}` } }
       : {}
   }
   const page = pageNumber((await searchParams).page)
