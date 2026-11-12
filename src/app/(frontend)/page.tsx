@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { AdSlot } from '@/components/ads/AdSlot'
@@ -14,6 +15,9 @@ import './front.css'
 // publishing only clears the app's own cache. One minute keeps a new story's wait on the
 // front page short; the data underneath stays cached, so a refresh costs no queries.
 export const revalidate = 60
+
+// Every other page names its own address; without this the home page was the one that didn't.
+export const metadata: Metadata = { alternates: { canonical: '/' } }
 
 const catName = (a: CardArticle) => (a.category && typeof a.category === 'object' ? a.category.name : '')
 
